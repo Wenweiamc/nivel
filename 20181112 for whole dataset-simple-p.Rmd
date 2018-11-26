@@ -1,7 +1,7 @@
 load(".RData")
 #PRINT
 #PRINT
-aaaaaaaaaaa
+
 ---
 title: "R Notebook"
 output: html_notebook

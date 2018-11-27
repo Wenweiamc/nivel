@@ -1,5 +1,4 @@
-#try
-aaaa
+
 ###########################
 # %% install libraries
 ###########################
@@ -46,7 +45,7 @@ library('reshape2')
 library('stddiff')
 library('randomForestSRC')
 library('subgroup.discovery')
-
+library(mice)
 ###########################
 # %% setwd
 ###########################
@@ -61,16 +60,22 @@ setwd("H:/qww/AMC/Utrecht/NIVEL/Thamar/20180823/")
 # read in data as factor per default
 data_first_treatment <-read.csv(file = "dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 data_first_treatment<-read.csv(file = "F:/博士/pumc/课题???/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
-data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
+data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 
 # convert selected variables to numeric
-cols.num <- c("age","nr_chron3", 'practice_size', 'nr_medication','nr_contacts_infection','nr_prescriptions_AB' ,'nr_contacts_resp')
+cols.num <- c("age","nr_chron3", 'practice_size', 'nr_medication','nr_contacts_infection','nr_prescriptions_AB' ,'nr_contacts_resp', "days_prev_cont")
 data_first_treatment[cols.num] <- sapply(data_first_treatment[cols.num],as.numeric)
+
+### Provide descriptives of all variables
+z<-dfSummary(data_first_treatment)
+write.table(z, file="descriptives_raw_dummy.csv", sep = ",")
+hist(data_first_treatment$ days_prev_cont)
+nrow(subset(data_first_treatment,outcome_2==1 & outcome_4==0))/nrow(subset(data_first_treatment,outcome_4==0))
 
 ###########################
 # %% select variables
 ###########################
-vars_selected <-read.csv(file = "variable_selections.csv",sep=',')
+vars_selected <-read.csv(file = "variable_selections.csv",sep=';')
 
 vars_treatment   <- as.character(filter(vars_selected,treatment == 1)$variable)
 vars_outcome     <- as.character(filter(vars_selected,outcome == 1)$variable)
@@ -304,7 +309,46 @@ data_confounders_to <- data_first_treatment_relevant[c(
   "osteop_morb",
   "poor_immune_response",
   "alcmisb_morb",
-  "postalcode")]                                                                                                                     
+  "postalcode")]        
+
+s<-dfSummary(data_confounders_to)
+write.table(s, file="descriptives_dummycto.csv", sep = ",")
+
+
+#Multivariate Imputation by Chained Equations
+data_confounders_to_mi<-mice(data_confounders_to, m=5,seed = 1234)
+#Warning message:
+ # Number of logged events: 25
+#http://stefvanbuuren.name/fimd/sec-knowledge.html
+head(data_confounders_to_mi$imp$nr_contacts_resp,5)
+summary(data_confounders_to_mi)
+densityplot(data_confounders_to_mi)
+data_confounders_to_mi$loggedEvents
+tail(data_confounders_to_mi$loggedEvents,3)
+
+pred <- make.predictorMatrix(data_confounders_to)
+pred[c("nr_contacts_resp", "AB_nose_infection"), c("nr_contacts_resp", "AB_nose_infection")] <- 0
+pred[c("nr_contacts_resp", "postalcode"), c("nr_contacts_resp", "postalcode")] <- 0
+
+pred
+data_confounders_to_mi<-mice(data_confounders_to,pred=pred, m=5,seed = 1234)
+
+mi<-dfSummary(data_confounders_to_mi)
+write.table(mi, file="descriptives_dummycto_mi.csv", sep = ",")
+
+
+
+model_fit<-with(data_confounders_to_mi, glm(outcome_4~AB_nose_infection,family = binomial))
+model_pooled<-pool(model_fit)
+summary(model_pooled)
+
+model_fit_multi<-with(data_confounders_to_mi, glm(
+  as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
+  family = binomial))
+model_pooled_multi<-pool(model_fit_multi)
+summary(model_pooled_multi)
+
+
 ###########################
 # %% method1: IPTW-Compute wights
 ###########################

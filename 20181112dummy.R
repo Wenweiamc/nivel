@@ -311,30 +311,44 @@ data_confounders_to <- data_first_treatment_relevant[c(
   "alcmisb_morb",
   "postalcode")]        
 
+
+data_confounders <- data_first_treatment_relevant[c(
+ 
+  "age",
+  "sex",
+  "nr_medication",
+  "COPD_morb",
+  "migraine_morb",
+  "hartfalen_morb",
+  "nr_contacts_resp",
+  "osteop_morb",
+  "poor_immune_response",
+  "alcmisb_morb",
+  "postalcode")] 
+
 s<-dfSummary(data_confounders_to)
 write.table(s, file="descriptives_dummycto.csv", sep = ",")
 
 
 #Multivariate Imputation by Chained Equations
-data_confounders_to_mi<-mice(data_confounders_to, m=5,seed = 1234)
+data_confounders_mi<-mice(data_confounders, m=5,seed = 1234)
 #Warning message:
  # Number of logged events: 25
 #http://stefvanbuuren.name/fimd/sec-knowledge.html
-head(data_confounders_to_mi$imp$nr_contacts_resp,5)
-summary(data_confounders_to_mi)
-densityplot(data_confounders_to_mi)
-data_confounders_to_mi$loggedEvents
-tail(data_confounders_to_mi$loggedEvents,3)
+head(data_confounders_mi$imp$nr_contacts_resp,5)
+summary(data_confounders_mi)
+densityplot(data_confounders_mi)
+data_confounders_mi$loggedEvents
+tail(data_confounders_mi$loggedEvents,3)
 
-pred <- make.predictorMatrix(data_confounders_to)
-pred[c("nr_contacts_resp", "AB_nose_infection"), c("nr_contacts_resp", "AB_nose_infection")] <- 0
+pred <- make.predictorMatrix(data_confounders)
 pred[c("nr_contacts_resp", "postalcode"), c("nr_contacts_resp", "postalcode")] <- 0
 
 pred
-data_confounders_to_mi<-mice(data_confounders_to,pred=pred, m=5,seed = 1234)
+data_confounders_mi<-mice(data_confounders,pred=pred, m=5,seed = 1234)
 
-mi<-dfSummary(data_confounders_to_mi)
-write.table(mi, file="descriptives_dummycto_mi.csv", sep = ",")
+mi<-dfSummary(data_confounders_mi)
+write.table(mi, file="descriptives_dummyc_mi.csv", sep = ",")
 
 
 

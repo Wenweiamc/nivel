@@ -46,6 +46,7 @@ library('stddiff')
 library('randomForestSRC')
 library('subgroup.discovery')
 library(mice)
+library(lubridate)
 ###########################
 # %% setwd
 ###########################
@@ -61,7 +62,8 @@ setwd("H:/qww/AMC/Utrecht/NIVEL/Thamar/20180823/")
 data_first_treatment <-read.csv(file = "dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 data_first_treatment<-read.csv(file = "F:/博士/pumc/课题???/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
-
+data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv")
+str(data_first_treatment)
 # convert selected variables to numeric
 cols.num <- c("age","nr_chron3", 'practice_size', 'nr_medication','nr_contacts_infection','nr_prescriptions_AB' ,'nr_contacts_resp', "days_prev_cont")
 data_first_treatment[cols.num] <- sapply(data_first_treatment[cols.num],as.numeric)
@@ -71,6 +73,19 @@ z<-dfSummary(data_first_treatment)
 write.table(z, file="descriptives_raw_dummy.csv", sep = ",")
 hist(data_first_treatment$ days_prev_cont)
 nrow(subset(data_first_treatment,outcome_2==1 & outcome_4==0))/nrow(subset(data_first_treatment,outcome_4==0))
+
+data_first_treatment$endtime <- rep("31dec2014",999)
+
+data_first_treatment$date_diff <- as.Date(data_first_treatment$endtime, format="%d %B %Y")-
+  as.Date(as.character(data_first_treatment$date), format="%d/%m/%Y")
+
+
+
+mutate(start_time=ymd(date), end_time=ymd(endtime))
+mutate(duration= data_first_treatment$endtime - data_first_treatment$date)
+data_first_treatment$date <- as.Date(data_first_treatment$date, "%m/%d/%Y")
+
+if outcome_4==NA then outcome_weight=
 
 ###########################
 # %% select variables

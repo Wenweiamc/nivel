@@ -21,10 +21,12 @@
 # install.packages('stddiff')
 # install.packages('randomForestSRC')
 # install.packages('subgroup.discovery')
-
+install.packages("installr")
 ###########################
 # %% load libraries
 ###########################
+library("installr")
+library(readr)
 library('glmnet')
 library('csvread')
 library('MASS')
@@ -47,11 +49,12 @@ library('randomForestSRC')
 library('subgroup.discovery')
 library(mice)
 library(lubridate)
+#updateR()
 ###########################
 # %% setwd
 ###########################
 setwd("C:/Users/mcschut/Documents/wip/chianti/data/processed/180523/")
-setwd("F:/博士/pumc/课题???/AMC/Utrecht/NIVEL/Thamar/20180823/")
+setwd("F:/博士/pumc/课题组/AMC/Utrecht/NIVEL/Thamar/20180823/")
 setwd("H:/qww/AMC/Utrecht/NIVEL/Thamar/20180823/")
 
 ###########################
@@ -60,10 +63,11 @@ setwd("H:/qww/AMC/Utrecht/NIVEL/Thamar/20180823/")
 
 # read in data as factor per default
 data_first_treatment <-read.csv(file = "dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
-data_first_treatment<-read.csv(file = "F:/博士/pumc/课题???/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
+data_first_treatment<-read.csv(file = "F:/博士/pumc/课题组/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
-data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv")
-str(data_first_treatment)
+data_first_treatment<-read_csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv")
+data_first_treatment<-read.csv(file = "F:/博士/pumc/课题组/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv")
+str(data_first_treatment$date)
 # convert selected variables to numeric
 cols.num <- c("age","nr_chron3", 'practice_size', 'nr_medication','nr_contacts_infection','nr_prescriptions_AB' ,'nr_contacts_resp', "days_prev_cont")
 data_first_treatment[cols.num] <- sapply(data_first_treatment[cols.num],as.numeric)
@@ -74,7 +78,20 @@ write.table(z, file="descriptives_raw_dummy.csv", sep = ",")
 hist(data_first_treatment$ days_prev_cont)
 nrow(subset(data_first_treatment,outcome_2==1 & outcome_4==0))/nrow(subset(data_first_treatment,outcome_4==0))
 
-data_first_treatment$endtime <- rep("31dec2014",999)
+###date
+data_first_treatment$endtime <- dmy(rep("31dec2014",999))
+data_first_treatment$date <- dmy(data_first_treatment$date)
+str(data_first_treatment$date)
+str(data_first_treatment$endtime)
+
+mean(month(data_first_treatment$date)==12)
+mean(month(data_first_treatment$date)<4)
+
+outcome_NA12 <- data_first_treatment  %>%
+filter(month(date)==12 & is.na(outcome_4))
+ 
+data_first_treatment$outcome_weight<- outcome_NA12 %>%
+  (31-day(data_first_treatment$date))/28  
 
 data_first_treatment$date_diff <- as.Date(data_first_treatment$endtime, format="%d %B %Y")-
   as.Date(as.character(data_first_treatment$date), format="%d/%m/%Y")

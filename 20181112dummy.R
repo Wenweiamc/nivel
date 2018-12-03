@@ -93,7 +93,7 @@ data_first_treatment_12ow <- mutate(data_first_treatment,
 ###########################
 # %% select variables
 ###########################
-vars_selected <-read.csv(file = "variable_selections.csv",sep=';')
+vars_selected <-read.csv(file = "variable_selections.csv",sep=',')
 
 vars_treatment   <- as.character(filter(vars_selected,treatment == 1)$variable)
 vars_outcome     <- as.character(filter(vars_selected,outcome == 1)$variable)
@@ -299,21 +299,11 @@ vars_confounders = c(
   "osteop_morb",
   "poor_immune_response",
   "alcmisb_morb",
-  "postalcode"
+  "postalcode",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB"
 )
-data_confounders_to_nao <- data_first_treatment_relevant_0.4_na.omit_v0[c(
-  "outcome_4","AB_nose_infection","type_AB_nose", 
-  "age",
-  "sex",
-  "nr_medication",
-  "COPD_morb",
-  "migraine_morb",
-  "hartfalen_morb",
-  "nr_contacts_resp",
-  "osteop_morb",
-  "poor_immune_response",
-  "alcmisb_morb",
-  "postalcode")]
+
 
 data_confounders_to <- data_first_treatment_relevant[c(
   "outcome_4","AB_nose_infection","type_AB_nose", 
@@ -327,7 +317,10 @@ data_confounders_to <- data_first_treatment_relevant[c(
   "osteop_morb",
   "poor_immune_response",
   "alcmisb_morb",
-  "postalcode")]        
+  "postalcode",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB",
+  )]        
 
 
 data_confounders <- data_first_treatment_relevant[c(
@@ -342,7 +335,10 @@ data_confounders <- data_first_treatment_relevant[c(
   "osteop_morb",
   "poor_immune_response",
   "alcmisb_morb",
-  "postalcode")] 
+  "postalcode",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB"
+  )] 
 
 s<-dfSummary(data_confounders_to)
 write.table(s, file="descriptives_dummycto.csv", sep = ",")
@@ -361,6 +357,8 @@ tail(data_confounders_mi$loggedEvents,3)
 
 pred <- make.predictorMatrix(data_confounders)
 pred[c("nr_contacts_resp", "postalcode"), c("nr_contacts_resp", "postalcode")] <- 0
+pred[c("nr_prescriptions_AB", "postalcode"), c("nr_prescriptions_AB", "postalcode")] <- 0
+pred[c("nr_contacts_infection", "postalcode"), c("nr_contacts_infection", "postalcode")] <- 0
 
 pred
 data_confounders_mi<-mice(data_confounders,pred=pred, m=5,seed = 1234)

@@ -339,10 +339,14 @@ vars_confounders = c(
   "osteop_morb",
   "poor_immune_response",
   "alcmisb_morb",
-  "postalcode")
-  
-data_confounders_to_nao <- data_first_treatment_relevant_0.4_na.omit[c(
-"outcome_4","AB_nose_infection","type_AB_nose", 
+  "postalcode",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB"
+)
+
+
+data_confounders_to <- data_first_treatment_relevant[c(
+  "outcome_4","AB_nose_infection","type_AB_nose", 
   "age",
   "sex",
   "nr_medication",
@@ -353,10 +357,14 @@ data_confounders_to_nao <- data_first_treatment_relevant_0.4_na.omit[c(
   "osteop_morb",
   "poor_immune_response",
   "alcmisb_morb",
-  "postalcode")]
-  
-  data_confounders_to <- data_first_treatment_relevant[c(
-"outcome_4","AB_nose_infection","type_AB_nose", 
+  "postalcode",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB",
+  )]        
+
+
+data_confounders <- data_first_treatment_relevant[c(
+ 
   "age",
   "sex",
   "nr_medication",
@@ -367,7 +375,10 @@ data_confounders_to_nao <- data_first_treatment_relevant_0.4_na.omit[c(
   "osteop_morb",
   "poor_immune_response",
   "alcmisb_morb",
-  "postalcode")]
+  "postalcode",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB"
+  )] 
 
 ###########################
 # %% Propensity score matching with ps

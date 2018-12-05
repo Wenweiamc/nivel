@@ -87,14 +87,11 @@ names(researchfile)
 # convert selected variables to numeric
 cols.num <- c("age","nr_chron3", 'practice_size', 'nr_medication','nr_contacts_infection','nr_prescriptions_AB' ,'nr_contacts_resp',"days_prev_cont","CRP_values")
 
-onlynose[cols.num] <- sapply(onlynose[cols.num],as.numeric)
-onlynose$date <- dmy(onlynose$date)
-
 data_first_treatment[cols.num] <- sapply(data_first_treatment[cols.num],as.numeric)
 data_first_treatment$date <- dmy(data_first_treatment$date)
 
-anti_fn <-anti_join(data_first_treatment, onlynose)
-semi_fn <-semi_join(data_first_treatment, onlynose)
+#anti_fn <-anti_join(data_first_treatment, onlynose)
+#semi_fn <-semi_join(data_first_treatment, onlynose)
 
 #####################
 setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181204wqi/")
@@ -102,22 +99,7 @@ setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibio
 z<-dfSummary(onlynose)
 write.table(z, file="descriptives_raw_nose.csv", sep = ",")
 
-z1<-dfSummary(anti_fn)
-write.table(z1, file="descriptives_raw_nose_anti.csv", sep = ",")
-
-z2<-dfSummary(semi_fn)
-write.table(z2, file="descriptives_raw_nose_semi.csv", sep = ",")
-
 ###date
-
-hist(onlynose$ days_prev_cont)
-nrow(subset(onlynose,outcome_2==1 & outcome_4==0))/nrow(subset(onlynose,outcome_4==0))
-
-mean(month(onlynose$date)==12)
-mean(month(onlynose$date)<4)
-
-onlynose_12ow <- mutate(onlynose,outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),
-                                                          (31-day(onlynose$date))/28, 1))
 
 hist(data_first_treatment$ days_prev_cont)
 nrow(subset(data_first_treatment,outcome_2==1 & outcome_4==0))/nrow(subset(data_first_treatment,outcome_4==0))
@@ -338,16 +320,23 @@ summary(uni)
 
 capture.output(uni, file = "Uni.doc")
 
+uni_w <- glm(outcome_4 ~ AB_nose_infection, 
+            weights = outcome_weight,
+            family = "binomial",
+            data = data_first_treatment_12ow_relevant_0.4)
+summary(uni_w)
+
 #### logistic multivariate
 vars_relevant_0.4_nto <- vars_relevant_0.4[!vars_relevant_0.4%in% c("outcome_4","AB_nose_infection","type_AB_nose")]
 
-multicov <-glm(
+multicov_w <-glm(
           as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_relevant_0.4_nto, collapse="+"),sep="")),
+            weights = outcome_weight,
             family = "binomial",
             data = data_first_treatment_12ow_relevant_0.4
            )
 
-summary(multicov)
+summary(multicov_w)
 
 
 ###########################
@@ -384,7 +373,7 @@ data_confounders_to <- data_first_treatment_12ow_relevant[c(
   "COPD_morb",
   "migraine_morb",
   "hartfalen_morb",
-  "nr_contacts_resp",
+  "nr_contacts_resp", 
   "osteop_morb",
   "poor_immune_response",
   "alcmisb_morb",
@@ -430,35 +419,31 @@ pred[c("nr_prescriptions_AB", "postalcode"), c("nr_prescriptions_AB", "postalcod
 pred[c("nr_contacts_infection", "postalcode"), c("nr_contacts_infection", "postalcode")] <- 0
 
 pred
-data_confounders_mi<-mice(data_confounders,pred=pred, m=5,seed = 1234)
+mi<-mice(data_confounders,pred=pred, m=5,seed = 1234)
+class(mi)
+
+data_confounders_mi<-data_confounders_mi$data
 class(data_confounders_mi)
 
-mi<-summary(data_confounders_mi)
-write.table(mi, file="descriptives_c_mi.csv", sep = ",")
+#write.table(mi, file="descriptives_c_mi.csv", sep = ",")
 
-write.mice.imputation(mi.res=data_confounders_mi, name="data_confounders_mii")
-#Error in `[<-.data.frame`(`*tmp*`, , "Imputation_", value = c(NA_real_,  : 
-#  replacement has 121960 rows, data has 146352
+data_confounders_mi_to <-merge(data_confounders_mi,data_confounders_to[,c("outcome_4","AB_nose_infection","type_AB_nose", "outcome_weight", "ID")], by="ID")
 
-
-data_confounders_mi_to <-merge(data_confounders_mii,data_confounders_to, by="ID")
-
-
-summary(glm(outcome_4 ~ nr_contacts_resp, data= data_confounders_mi_to, family = binomial))
-summary(glm(outcome_4 ~ nr_prescriptions_AB, data= data_confounders_mi_to, family = binomial))
-summary(glm(outcome_4 ~ nr_contacts_infection, data= data_confounders_mi_to, family = binomial))
-summary(glm(AB_nose_infection ~ nr_contacts_resp, data= data_confounders_mi_to, family = binomial))
-summary(glm(AB_nose_infection ~ nr_prescriptions_AB, data= data_confounders_mi_to, family = binomial))
-summary(glm(AB_nose_infection ~ nr_contacts_infection, data= data_confounders_mi_to, family = binomial))
+summary(glm(outcome_4 ~ nr_contacts_resp, weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
+summary(glm(outcome_4 ~ nr_prescriptions_AB, weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
+summary(glm(outcome_4 ~ nr_contacts_infection, weights = outcome_weight,data= data_confounders_mi_to, family = binomial))
+summary(glm(AB_nose_infection ~ nr_contacts_resp,weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
+summary(glm(AB_nose_infection ~ nr_prescriptions_AB, weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
+summary(glm(AB_nose_infection ~ nr_contacts_infection, weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
 
 
-model_fit<-with(data_confounders_mi, glm(outcome_4~AB_nose_infection,family = binomial))
+model_fit<-with(data_confounders_mi, glm(outcome_4~AB_nose_infection,weights = outcome_weight, family = binomial))
 model_pooled<-pool(model_fit)
 summary(model_pooled)
 
 model_fit_multi<-with(data_confounders_mi, glm(
   as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
-  family = binomial))
+  weights = outcome_weight, family = binomial))
 model_pooled_multi<-pool(model_fit_multi)
 summary(model_pooled_multi)
 
@@ -466,16 +451,16 @@ summary(model_pooled_multi)
 # %% Propensity score matching with ps
 
 ###########################
-```{r}
 
-data_confounders_to$AB<-0
-data_confounders_to$AB[as.numeric(data_confounders_to$AB_nose_infection)==2]<-1
+
+data_confounders_mi_to$AB<-0
+data_confounders_mi_to$AB[as.numeric(data_confounders_mi_to$AB_nose_infection)==2]<-1
 
 
 set.seed(1)
 PS_Model<-ps(
   as.formula(paste("AB ~ ",paste(vars_confounders,collapse="+"),sep="")),
-  data = data_confounders_to,
+  data = data_confounders_mi_to,
   verbose = FALSE, 
   estimand = "ATE")
 
@@ -493,10 +478,12 @@ ps.balance<-bal.table(PS_Model)
 ps.balance
 write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181204wqi/ps.balance_ab.csv", sep = ",")
 
-data_confounders_to$w<- get.weights(PS_Model,stop.method = "es.mean" )
+write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abmi.csv", sep = ",")
+
+data_confounders_mi_to$w<- get.weights(PS_Model,stop.method = "es.mean" )
 
 
-design.ps <- svydesign(ids=~1, weights = ~ w*outcome_weight, data = data_confounders_to)
+design.ps <- svydesign(ids=~1, weights = ~ w*outcome_weight, data = data_confounders_mi_to)
 
 
 ## survey
@@ -508,7 +495,7 @@ summary(glm_ab)
 cbind( exp(coef(glm_ab)), exp(summary(glm_ab)$coefficients[,1] - 1.96*summary(glm_ab)$coefficients[,2]), exp(summary(glm_ab)$coefficients[,1] + 1.96*summary(glm_ab)$coefficients[,2]) )
 
 # model 2
-glm_ab_part <- svyglm(outcome_4 ~ AB_nose_infection + age + sex + nr_medication + COPD_morb + nr_contacts_resp + poor_immune_response + postalcode, design = design.ps, family=quasibinomial)
+glm_ab_part <- svyglm(outcome_4 ~ AB_nose_infection + postalcode, design = design.ps, family=quasibinomial)
 
 summary(glm_ab_part)
 
@@ -522,7 +509,7 @@ as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collap
 summary(glm_ab_confounder)
 
 cbind( exp(coef(glm_ab_confounder)), exp(summary(glm_ab_confounder)$coefficients[,1] - 1.96*summary(glm_ab_confounder)$coefficients[,2]), exp(summary(glm_ab_confounder)$coefficients[,1] + 1.96*summary(glm_ab_confounder)$coefficients[,2]) )
-```
+
 
 
 ###########################
@@ -590,7 +577,7 @@ cbind( exp(coef(multi_type)), exp(summary(multi_type)$coefficients[,1] - 1.96*su
 
 MNPS_cto_type <- mnps(
   as.formula(paste("type_AB_nose ~ ",paste(vars_confounders,collapse="+"),sep="")),
-  data = data_confounders_to,
+  data = data_confounders_mi_to,
   estimand = "ATE",
   verbose = FALSE,
   stop.method = c("es.mean", "ks.mean"),
@@ -615,9 +602,9 @@ plot(MNPS_cto_type, plots = 3)
 plot(MNPS_cto_type, plots = 4) 
 plot(MNPS_cto_type, plots = 5) 
 
-data_confounders_to$w <- get.weights(MNPS_cto_type, stop.method = "es.mean")
+data_confounders_mi_to$w <- get.weights(MNPS_cto_type, stop.method = "es.mean")
 
-design.mnps <- svydesign(ids=~1, weights=~w*outcome_weight, data=data_confounders_to) 
+design.mnps <- svydesign(ids=~1, weights=~w*outcome_weight, data=data_confounders_mi_to) 
 ## survey
 # model1
 glm_type <- svyglm(outcome_4 ~ type_AB_nose, design = design.mnps,family=quasibinomial)

@@ -102,7 +102,7 @@ outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_trea
 
 data_first_treatment_12ow <- mutate(data_first_treatment, 
 ID=seq.int(nrow(data_first_treatment_12ow)), 
-month=month(date),
+week=week(date),
 flu_epi=ifelse(week(date) %in% c(5:8, 10,11,49:53),1,0),
 outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
 
@@ -121,7 +121,7 @@ data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(9:
 
 setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/4. input R")
 
-vars_selected <-read.csv(file = "variable_selections.csv",sep=';')
+vars_selected <-read.csv(file = "variable_selections.csv",sep=',')
 
 vars_treatment   <- as.character(filter(vars_selected,treatment == 1)$variable)
 vars_outcome     <- as.character(filter(vars_selected,outcome == 1)$variable)

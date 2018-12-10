@@ -73,25 +73,15 @@ setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibio
 #data_first_treatment <-read.csv(file = "dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 #data_first_treatment<-read.csv(file = "F:/åå£«/pumc/è¯¾é¢ç»/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 
-
 data_first_treatment <-read.csv(file = "researchfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 
-onlynose <-read.csv(file = "researchfile_onlynose.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
-
-researchfile <-read.csv(file = "research file.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
-
-names(data_first_treatment)
-names(onlynose)
-names(researchfile)
+str(data_first_treatment)
 
 # convert selected variables to numeric
 cols.num <- c("age","nr_chron3", 'practice_size', 'nr_medication','nr_contacts_infection','nr_prescriptions_AB' ,'nr_contacts_resp',"days_prev_cont","CRP_values")
 
 data_first_treatment[cols.num] <- sapply(data_first_treatment[cols.num],as.numeric)
 data_first_treatment$date <- dmy(data_first_treatment$date)
-
-#anti_fn <-anti_join(data_first_treatment, onlynose)
-#semi_fn <-semi_join(data_first_treatment, onlynose)
 
 #####################
 setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181204wqi/")
@@ -106,9 +96,24 @@ nrow(subset(data_first_treatment,outcome_2==1 & outcome_4==0))/nrow(subset(data_
 
 mean(month(data_first_treatment$date)==12)
 mean(month(data_first_treatment$date)<4)
+                                                      
+data_first_treatment_12ow <- mutate(data_first_treatment, 
+outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
 
-data_first_treatment_12ow <- mutate(data_first_treatment,outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),
-                                                          (31-day(data_first_treatment$date))/28, 1))
+data_first_treatment_12ow <- mutate(data_first_treatment, 
+ID=seq.int(nrow(data_first_treatment_12ow)), 
+month=month(date),
+flu_epi=ifelse(week(date) %in% c(5:8, 10,11,49:53),1,0),
+outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
+
+```{}
+
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(1,2,12)] <- "winter"
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(3:5)] <- "spring"
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(6:8)] <- "summer"
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(9:11)] <- "autumn"
+
+```
 
 ###########################
 # %% select variables
@@ -259,6 +264,7 @@ vars_OR <- gsub(".AB_nose_infection1", "", vars_OR)
 ###########################
 model_AICo <- glm(
   outcome_4 ~ .,
+  weights = outcome_weight,
   data = dplyr::select(data_first_treatment_12ow_relevant_0.4_na.omit, - vars_treatment),
   family=binomial)
   

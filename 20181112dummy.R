@@ -66,7 +66,7 @@ setwd("H:/qww/AMC/Utrecht/NIVEL/Thamar/20180823/")
 # read in data as factor per default
 data_first_treatment <-read.csv(file = "dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 data_first_treatment<-read.csv(file = "F:/博士/pumc/课题�?/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
-data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
+data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523//dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 data_first_treatment<-read_csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv")
 data_first_treatment<-read.csv(file = "F:/博士/pumc/课题�?/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_onlynose.csv")
 
@@ -88,13 +88,24 @@ mean(month(data_first_treatment$date)==12)
 mean(month(data_first_treatment$date)<4)
 
 data_first_treatment_12ow <- mutate(data_first_treatment, 
-                                    outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),
-                                                          (31-day(data_first_treatment$date))/28, 1))
+                                    outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
+
+data_first_treatment_12ow <- mutate(data_first_treatment, 
+                                    ID=seq.int(nrow(data_first_treatment_12ow)), 
+                                    week=week(date),
+                                    flu_epi=ifelse(week(date) %in% c(5:8, 10,11,49:53),1,0),
+                                    outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
+
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(3:5)] <- "spring"
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(6:8)] <- "summer"
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(9:11)] <- "autumn"
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(1,2,12)] <- "winter"
+data_first_treatment_12ow$season <- factor(data_first_treatment_12ow$season, ordered = TRUE, levels = c("spring", "summer", "autumn", "winter"))
 
 ###########################
 # %% select variables
 ###########################
-vars_selected <-read.csv(file = "variable_selections.csv",sep=';')
+vars_selected <-read.csv(file = "variable_selections.csv",sep=',')
 
 vars_treatment   <- as.character(filter(vars_selected,treatment == 1)$variable)
 vars_outcome     <- as.character(filter(vars_selected,outcome == 1)$variable)
@@ -237,6 +248,7 @@ vars_OR <- gsub(".AB_nose_infection1", "", vars_OR)
 
 model_AICo <- glm(
   outcome_4 ~ .,
+  weights = outcome_weight,
   data = dplyr::select(data_first_treatment_12ow_relevant_0.4_na.omit_v0, -vars_treatment),
   family=binomial)
 
@@ -303,9 +315,6 @@ vars_confounders = c(
   "nr_contacts_infection",
   "nr_prescriptions_AB"
 )
-
-data_first_treatment_12ow_relevant$ID <- seq.int(nrow(data_first_treatment_12ow_relevant))
-names(data_first_treatment_12ow_relevant)
 
 data_confounders_to <- data_first_treatment_12ow_relevant[c(
   "outcome_4","AB_nose_infection","type_AB_nose", "outcome_weight", "ID", 
@@ -743,16 +752,16 @@ cbind( exp(coef(glm_cto)), exp(summary(glm_cto)$coefficients[,1] - 1.96*summary(
 ###########################
 
 ### treatment using subset data with only no treatment AB 
-AB_0 <- data_first_treatment_12ow_relevant_0.4_na.omit_v0%>% filter (type_AB_nose == 0) ## control
+AB_0 <- data_first_treatment_12ow_relevant_0.4%>% filter (type_AB_nose == 0) ## control
 regF_0 <- rfsrcSyn(
   as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
   data  = AB_0)
 
 ### using that synthetic forest to predict outcome of all participants (so wether they had treatment of not)
-pred.Syn_type_0 <- rfsrcSyn(object = regF_0, newdata = data_first_treatment_12ow_relevant_0.4_na.omit_v0)
+pred.Syn_type_0 <- rfsrcSyn(object = regF_0, newdata = data_first_treatment_12ow_relevant_0.4)
 
 ### treatment using subset data with treatment AB 
-AB_1 <- data_first_treatment_12ow_relevant_0.4_na.omit_v0%>% filter (AB_nose_infection == 1)
+AB_1 <- data_first_treatment_12ow_relevant_0.4%>% filter (AB_nose_infection == 1)
 
 regF_1 <- rfsrcSyn(
   as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),

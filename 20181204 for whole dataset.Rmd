@@ -663,8 +663,9 @@ AB_0 <- data_first_treatment_12ow_relevant_0.4%>% filter (type_AB_nose == 0) ## 
 
 ### using that syntetic forest to predict outcome of all participants (so wether they had treatment of not)
  
-pred.Syn_type_0 <- rfsrcSyn(object = regF_0, newdata = data_first_treatment_12ow_relevant_0.4, na.action = c("na.impute") )
-
+pred.Syn_type_0 <- rfsrcSyn(object = regF_0, 
+                            na.action = "na.impute",
+                            newdata = data_first_treatment_12ow_relevant_0.4)
 
 ```
 ```{r}
@@ -675,7 +676,9 @@ regF_1 <- rfsrcSyn(
   as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
   data  = AB_1)
   
-pred.Syn_AB_1 <- rfsrcSyn(object = regF_1, newdata = data_first_treatment_12ow_relevant_0.4)
+pred.Syn_AB_1 <- rfsrcSyn(object = regF_1, 
+                          na.action = "na.impute",
+                          newdata = data_first_treatment_12ow_relevant_0.4)
 
 # calculate difference
 data_first_treatment_12ow_relevant_0.4$delta <- (pred.Syn_AB_1$rfSynPred$predicted -  pred.Syn_type_0$rfSynPred$predicted)[,2]

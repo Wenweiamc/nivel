@@ -1,0 +1,1121 @@
+
+###########################
+# %% install libraries
+###########################
+# install.packages('glmnet')
+# install.packages('csvread')
+# install.packages('MASS')
+# install.packages('leaps')
+# install.packages('grid')
+# install.packages('gridExtra')
+# install.packages('dplyr')
+# install.packages('MatchIt')
+# install.packages('gmodels')
+# install.packages('tableone')
+# install.packages('ggplot2')
+# install.packages('survey')
+# install.packages('twang')
+# install.packages('summarytools')
+#  install.packages('Matching')
+# install.packages('reshape2')
+# install.packages('stddiff')
+# install.packages('randomForestSRC')
+# install.packages('subgroup.discovery')
+
+###########################
+# %% load libraries
+###########################
+library("installr")
+library(readr)
+library('glmnet')
+library('csvread')
+library('MASS')
+library('leaps')
+library('grid')
+library('gridExtra')
+library('dplyr')
+library('MatchIt')
+library('gmodels')
+library('tableone')
+library('ggplot2')
+library('survey')
+library('twang')
+library('summarytools')
+library('Matching')
+library('reshape2')
+library('stddiff')
+library('randomForestSRC')
+library('subgroup.discovery')
+library(tableone)
+library(sandwich)
+library(survey)
+library("Hmisc")
+library("rms")
+library(subgroup.discovery)
+library(mice)
+library(miceadds)
+library(lubridate)
+library(testthat)
+#updateR()
+###########################
+# %% setwd
+###########################
+#setwd("C:/Users/mcschut/Documents/wip/chianti/data/processed/180523/")
+#setwd("F:/åå£«/pumc/è¯¾é¢ç»/AMC/Utrecht/NIVEL/Thamar/20180823/")
+setwd("H:/qww/AMC/Utrecht/NIVEL/Thamar/20180823/")
+
+setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/4. input R")
+###########################
+# %% read data and convert variables
+###########################
+
+# read in data as factor per default
+#data_first_treatment <-read.csv(file = "dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
+#data_first_treatment<-read.csv(file = "F:/åå£«/pumc/è¯¾é¢ç»/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
+data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/researchfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
+
+data_first_treatment <-read.csv(file = "researchfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
+
+str(data_first_treatment)
+
+# convert selected variables to numeric
+cols.num <- c("age","nr_chron3", 'practice_size', 'nr_medication','nr_contacts_infection','nr_prescriptions_AB' ,'nr_contacts_resp',"days_prev_cont","CRP_values")
+
+data_first_treatment[cols.num] <- sapply(data_first_treatment[cols.num],as.numeric)
+data_first_treatment$date <- dmy(data_first_treatment$date)
+
+###date
+
+hist(data_first_treatment$ days_prev_cont)
+nrow(subset(data_first_treatment,outcome_2==1 & outcome_4==0))/nrow(subset(data_first_treatment,outcome_4==0))
+
+mean(month(data_first_treatment$date)==12)
+mean(month(data_first_treatment$date)<4)
+                                                      
+data_first_treatment_12ow <- mutate(data_first_treatment, 
+outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
+
+data_first_treatment_12ow <- mutate(data_first_treatment, 
+ID=seq.int(nrow(data_first_treatment_12ow)), 
+week=week(date),
+flu_epi=ifelse(week(date) %in% c(5:8, 10,11,49:53),1,0),
+outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
+
+```{}
+
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(3:5)] <- "spring"
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(6:8)] <- "summer"
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(9:11)] <- "autumn"
+data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(1,2,12)] <- "winter"
+data_first_treatment_12ow$season <- factor(data_first_treatment_12ow$season, ordered = TRUE, levels = c("spring", "summer", "autumn", "winter"))
+```
+#####################
+setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181213wqi/")
+### Provide descriptives of all variables
+z<-dfSummary(data_first_treatment_12ow)
+write.table(z, file="descriptives_raw_data_first_treatment_12ow.csv", sep = ",")
+
+###########################
+# %% select variables
+###########################
+
+setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/4. input R")
+
+vars_selected <-read.csv(file = "variable_selections.csv",sep=',')
+
+vars_treatment   <- as.character(filter(vars_selected,treatment == 1)$variable)
+vars_outcome     <- as.character(filter(vars_selected,outcome == 1)$variable)
+vars_other       <- as.character(filter(vars_selected,other == 1)$variable)
+vars_relevant    <- as.character(filter(vars_selected,relevant == 1)$variable)
+vars_relevant_nto    <- as.character(filter(vars_selected,relevant_nto == 1)$variable)
+
+###########################
+# %% drop variables that were indicated as irrelevant
+###########################
+data_first_treatment_12ow_relevant <- select(data_first_treatment_12ow,vars_relevant)
+
+###########################
+# %% drop variables with missing values
+###########################
+
+# select only variables with percentage missings less than threshold
+data_first_treatment_12ow_relevant_0.4 <- data_first_treatment_12ow_relevant[, colMeans(is.na(data_first_treatment_12ow_relevant)) <= 0.4]
+
+data_first_treatment_12ow_0.4 <- data_first_treatment_12ow[, colMeans(is.na(data_first_treatment_12ow)) <= 0.4]
+
+# FYI what were the dropped variables?
+  setdiff(vars_selected$variable,names(data_first_treatment_12ow_relevant_0.4))
+  setdiff(vars_selected$variable,names(data_first_treatment_12ow_0.4))
+# only CRP due to missings, other dropped variables are not relevant
+
+# remove dropped variables from variable selection
+vars_relevant_0.4 <- intersect(vars_relevant,names(data_first_treatment_12ow_relevant_0.4))
+
+###########################
+# %% descriptive statistics and remove variables with variance = 0 @@@ still gives warning messages about deprecated
+###########################
+# TvE: tried two alternatives, both resulted in no variabels with variance ==0. Checked in stata --> same result
+
+# which variables have variance = 0?
+# vars_zero = lapply(data_first_treatment_12ow_relevant_0.4, var, na.rm = TRUE) != 0
+# vars_zero_names = names(vars_zero[vars_zero == FALSE])
+all(duplicated(data_first_treatment_12ow_relevant_0.4)[-1L])
+which(apply(data_first_treatment_12ow_relevant_0.4, 2, var) == 0)
+
+# drop variables with variance = 0
+#data_first_treatment_12ow_relevant_0.4_v0<- dplyr::select(data_first_treatment_12ow_relevant_0.4,-vars_zero_names)
+
+# remove dropped variables from variable selection
+#vars_relevant_0.4_v0 <- intersect(vars_relevant,names(data_first_treatment_12ow_relevant_0.4_v0)) 
+
+
+###########################
+# %% remove rows with any missing values
+###########################
+
+# FYI how many rows are deleted (~10000)
+dim(data_first_treatment_12ow_relevant_0.4)[1] - dim(na.omit(data_first_treatment_12ow_relevant_0.4))[1]
+
+data_first_treatment_12ow_relevant_0.4_na.omit <- na.omit(data_first_treatment_12ow_relevant_0.4)
+
+vars_relevant_0.4_na.omit <- names(data_first_treatment_12ow_relevant_0.4_na.omit)
+# TvE: what happens here? (above, nothing?)
+
+###########################
+# %% descriptive statistics and remove variables with variance = 0 @@@ still gives warning messages about deprecated
+# TvE: this is a duplication of lines 131 and further, should be removed?
+###########################
+
+# which variables have variance = 0?
+#vars_zero_na.omit = lapply(data_first_treatment_12ow_relevant_0.4_v0_na.omit, var, na.rm = TRUE) != 0
+#vars_zero_na.omit_names = names(vars_zero_na.omit[vars_zero_na.omit == FALSE])
+#all(duplicated(x)[-1L])
+
+# drop variables with variance = 0
+#data_first_treatment_12ow_relevant_0.4_na.omit_v0<- dplyr::select(data_first_treatment_12ow_relevant_0.4_v0_na.omit,-vars_zero_na.omit_names)
+
+# remove dropped variables from variable selection
+#vars_relevant_0.4_na.omit_v0 <- intersect(vars_relevant,names(data_first_treatment_12ow_relevant_0.4_v0_na.omit)) 
+
+
+
+###########################
+# %% print table one
+###########################
+setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181213wqi/")
+
+a<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
+                     strata="AB_nose_infection",
+                     data=data_first_treatment_12ow_relevant_0.4[,names(data_first_treatment_12ow_relevant_0.4) %in% vars_relevant_0.4, drop = F],
+                     test=TRUE))
+
+b<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
+                        strata="type_AB_nose",
+                        data=data_first_treatment_12ow_relevant_0.4[,names(data_first_treatment_12ow_relevant_0.4) %in% vars_relevant_0.4, drop = F],
+                        test=TRUE))
+
+# TvE added 'c' to test shorter code (result: c=b)                        
+#c<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
+                        strata="type_AB_nose",
+                        data=data_first_treatment_12ow_relevant_0.4,
+                        test=TRUE))
+ 
+write.table(a, file="Unmatched_ab.csv", sep = ",")
+write.table(b, file="Unmatched_type.csv", sep = ",")
+#write.table(c, file="Unmatched_type_test.csv", sep = ",")
+
+
+###########################
+# %% STEP 1: select variables with OR > 1%
+###########################
+# TVE: added 'link=logit' to first calculation (did not cause any differences)
+# conclusion: no variables change the OR by more than ~1% so no confounders selected in this step
+
+# calculate OR1
+model_OR <-glm(
+  outcome_4 ~ AB_nose_infection,
+  family = binomial(link=logit),
+  data = data_first_treatment_12ow_relevant_0.4)
+OR1<- exp(model_OR$coefficients[2])
+
+# FYI model summary
+summary(model_OR)
+
+# calculate rates for relevant variables
+# TVE: vars you don't want to include here
+vars_relevant_0.4_nto <- vars_relevant_0.4[!vars_relevant_0.4%in% c("outcome_4","AB_nose_infection","type_AB_nose")]
+
+rate <- sapply(vars_relevant_0.4_nto,
+       function(varname){
+         md <-glm(
+                as.formula(paste("outcome_4 ~ AB_nose_infection + ",varname)),
+                family=binomial(link=logit),
+                data=data_first_treatment_12ow_relevant_0.4
+              )
+         rate <- abs(exp(summary(md)$coef[2])-OR1)/OR1
+       }
+     )
+
+# drop the variables that have OR =< 1%
+vars_OR <- labels(rate)[unlist(rate)> 0.01]
+
+# drop ".AB_nose_infection1" from labels
+vars_OR <- gsub(".AB_nose_infection1", "", vars_OR)
+
+###########################
+# %% STEP 2: AIC to select co-variables: outcome
+###########################
+model_AICo <- glm(
+  outcome_4 ~ .,
+  weights = outcome_weight,
+  data = dplyr::select(data_first_treatment_12ow_relevant_0.4_na.omit, - vars_treatment),
+  family=binomial)
+  
+# Select most predictive variables
+AICo <- stepAIC(model_AICo)
+# FYI show formula of the final model
+formula(AICo)
+# show the selected variables
+vars_AICo <- attr(terms(AICo),"term.labels")
+
+###########################
+# %% STEP 3: AIC to select co-variables: treatment
+###########################
+
+model_AICt <- glm(
+  AB_nose_infection ~ .,
+  data = select(data_first_treatment_12ow_relevant_0.4_na.omit[!names(data_first_treatment_12ow_relevant_0.4_na.omit) %in% vars_outcome],- type_AB_nose),
+  family=binomial)
+
+summary(model_AICt)
+# Select most predictive variables
+AICt <- stepAIC(model_AICt)
+
+# FYI show formula of the final model
+formula(AICt)
+
+# Show the selected variables
+vars_AICt <- attr(terms(AICt),"term.labels")
+
+###########################
+# %% Step 4 univariate relation outcome ~ selected treatment variables
+###########################
+
+models <- lapply(vars_AICt,
+  function(x) {
+    glm(substitute(outcome_4 ~ i, list(i = as.name(x))),
+    weights = outcome_weight,
+        family = binomial,
+        data = select(data_first_treatment_12ow_relevant_0.4_na.omit,-vars_treatment))
+  }
+)
+
+lapply(models, summary)
+
+# try logistic uni& multivariate to select confounders
+
+#### logistic univariate
+#uni<-glm(outcome_4~AB_nose_infection, data= data_first_treatment_12ow_relevant_0.4, family = binomial)
+
+#summary(uni)
+data_first_treatment_12ow_relevant_do_4 <- select(data_first_treatment_12ow_relevant,-outcome_4)
+
+uni <- lapply(names(data_first_treatment_12ow_relevant_do_4),
+function(var){
+uni<-glm(
+as.formula(paste("outcome_4 ~", var)), 
+data= data_first_treatment_12ow_relevant, family = binomial)
+summary(uni)
+})
+
+capture.output(uni, file = "Uni.doc")
+
+uni_w <- glm(outcome_4 ~ AB_nose_infection, 
+            weights = outcome_weight,
+            family = "binomial",
+            data = data_first_treatment_12ow_relevant_0.4)
+summary(uni_w)
+
+#### logistic multivariate
+vars_relevant_0.4_nto <- vars_relevant_0.4[!vars_relevant_0.4%in% c("outcome_4","AB_nose_infection","type_AB_nose")]
+
+multicov_w <-glm(
+          as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_relevant_0.4_nto, collapse="+"),sep="")),
+            weights = outcome_weight,
+            family = "binomial",
+            data = data_first_treatment_12ow_relevant_0.4
+           )
+
+summary(multicov_w)
+
+
+###########################
+# %% Determine confounder variables @@@ todo ask ameen how we do this
+
+# TVE: I think that the confounders that resulted form step 1 (OR) are missing? nr_contacts_infectino and nr_prescriptions_AB? (nr_contacts_resp and nr_medications are included through AICo)
+# Added manually (last two lines) --> omitted after email from AmeeN: 1% change is not enough (standaard is 10%)
+###########################
+
+vars_confounders = c(
+  "age",
+  "sex",
+  "nr_medication",
+  "COPD_morb",
+  "migraine_morb",
+  "nr_contacts_resp",
+  "osteop_morb",
+  "poor_immune_response",
+  "alcmisb_morb",
+  "practice_size",
+  "Depressie_morb",
+  "aangaf_morb",
+  "hartfalen_morb",
+  "flu_epi",
+  "season",
+  "postalcode",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB"
+)
+
+vars_confounders_np = c(
+   "age",
+  "sex",
+  "nr_medication",
+  "COPD_morb",
+  "migraine_morb",
+  "nr_contacts_resp",
+  "osteop_morb",
+  "poor_immune_response",
+  "alcmisb_morb",
+  "practice_size",
+  "Depressie_morb",
+  "aangaf_morb",
+  "hartfalen_morb",
+  "flu_epi",
+  "season",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB"
+)
+
+vars_confounders_nm = c(
+   "age",
+  "sex",
+  "nr_medication",
+  "COPD_morb",
+  "migraine_morb",
+  "osteop_morb",
+  "poor_immune_response",
+  "alcmisb_morb",
+  "practice_size",
+  "Depressie_morb",
+  "aangaf_morb",
+  "hartfalen_morb",
+  "flu_epi",
+  "season",
+  "postalcode"
+)
+
+vars_confounders_npm = c(
+   "age",
+  "sex",
+  "nr_medication",
+  "COPD_morb",
+  "migraine_morb",
+  "osteop_morb",
+  "poor_immune_response",
+  "alcmisb_morb",
+  "practice_size",
+  "Depressie_morb",
+  "aangaf_morb",
+  "hartfalen_morb",
+  "flu_epi",
+  "season"
+)
+
+data_confounders_to <- data_first_treatment_12ow_relevant[c(
+  "outcome_4","AB_nose_infection","type_AB_nose", "outcome_weight", "ID", 
+   "age",
+  "sex",
+  "nr_medication",
+  "COPD_morb",
+  "migraine_morb",
+  "nr_contacts_resp",
+  "osteop_morb",
+  "poor_immune_response",
+  "alcmisb_morb",
+  "practice_size",
+  "Depressie_morb",
+  "aangaf_morb",
+  "hartfalen_morb",
+  "flu_epi",
+  "season",
+  "postalcode",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB"
+  )]        
+
+
+data_confounders <- data_first_treatment_12ow_relevant[c(
+  "ID",
+    "age",
+  "sex",
+  "nr_medication",
+  "COPD_morb",
+  "migraine_morb",
+  "nr_contacts_resp",
+  "osteop_morb",
+  "poor_immune_response",
+  "alcmisb_morb",
+  "practice_size",
+  "Depressie_morb",
+  "aangaf_morb",
+  "hartfalen_morb",
+  "flu_epi",
+  "season",
+  "postalcode",
+  "nr_contacts_infection",
+  "nr_prescriptions_AB"
+  )] 
+  
+  
+s<-dfSummary(data_confounders_to)
+write.table(s, file="descriptives_cto.csv", sep = ",")
+
+
+#Multivariate Imputation by Chained Equations
+data_confounders_mi<-mice(data_confounders, m=5,seed = 1234)
+
+head(data_confounders_mi$imp$nr_contacts_resp,5)
+summary(data_confounders_mi)
+densityplot(data_confounders_mi)
+data_confounders_mi$loggedEvents
+tail(data_confounders_mi$loggedEvents,3)
+
+pred <- make.predictorMatrix(data_confounders)
+pred[c("nr_contacts_resp", "postalcode"), c("nr_contacts_resp", "postalcode")] <- 0
+pred[c("nr_prescriptions_AB", "postalcode"), c("nr_prescriptions_AB", "postalcode")] <- 0
+pred[c("nr_contacts_infection", "postalcode"), c("nr_contacts_infection", "postalcode")] <- 0
+
+pred
+mi<-mice(data_confounders,pred=pred, m=5,seed = 1234)
+class(mi)
+
+data_confounders_mi<-data_confounders_mi$data
+class(data_confounders_mi)
+
+#write.table(mi, file="descriptives_c_mi.csv", sep = ",")
+
+data_confounders_mi_to <-merge(data_confounders_mi,data_confounders_to[,c("outcome_4","AB_nose_infection","type_AB_nose", "outcome_weight", "ID")], by="ID")
+
+summary(glm(outcome_4 ~ nr_contacts_resp, weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
+summary(glm(outcome_4 ~ nr_prescriptions_AB, weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
+summary(glm(outcome_4 ~ nr_contacts_infection, weights = outcome_weight,data= data_confounders_mi_to, family = binomial))
+summary(glm(AB_nose_infection ~ nr_contacts_resp,weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
+summary(glm(AB_nose_infection ~ nr_prescriptions_AB, weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
+summary(glm(AB_nose_infection ~ nr_contacts_infection, weights = outcome_weight, data= data_confounders_mi_to, family = binomial))
+
+
+model_fit<-with(data_confounders_mi, glm(outcome_4~AB_nose_infection,weights = outcome_weight, family = binomial))
+model_pooled<-pool(model_fit)
+summary(model_pooled)
+
+model_fit_multi<-with(data_confounders_mi, glm(
+  as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
+  weights = outcome_weight, family = binomial))
+model_pooled_multi<-pool(model_fit_multi)
+summary(model_pooled_multi)
+
+###########################
+# %% Propensity score matching with ps
+
+###########################
+
+
+data_confounders_to$AB<-0
+data_confounders_to$AB[as.numeric(data_confounders_to$AB_nose_infection)==2]<-1
+
+
+set.seed(1)
+PS_Model<-ps(
+  as.formula(paste("AB ~ ",paste(vars_confounders,collapse="+"),sep="")),
+  data = data_confounders_to,
+  verbose = FALSE, 
+  estimand = "ATE")
+
+plot(PS_Model, plots = 1)
+plot(PS_Model, plots = 2)
+plot(PS_Model, plots = 3)
+plot(PS_Model, plots = 4)
+plot(PS_Model, plots = 5)
+
+summary(PS_Model$gbm.obj,
+        n.trees=PS_Model$desc$ks.mean.ATE$n.trees,
+        plot=TRUE)
+summary(PS_Model)
+ps.balance<-bal.table(PS_Model)
+ps.balance
+write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181213wqi/ps.balance_ab.csv", sep = ",")
+
+write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abflu.csv", sep = ",")
+
+data_confounders_to$w<- get.weights(PS_Model,stop.method = "es.mean" )
+
+
+design.ps <- svydesign(ids=~1, weights = ~ w*outcome_weight, data = data_confounders_to)
+
+
+## survey
+# model 1
+glm_ab <- svyglm(outcome_4 ~ AB_nose_infection, design = design.ps, family=quasibinomial)
+
+summary(glm_ab)
+
+cbind( exp(coef(glm_ab)), exp(summary(glm_ab)$coefficients[,1] - 1.96*summary(glm_ab)$coefficients[,2]), exp(summary(glm_ab)$coefficients[,1] + 1.96*summary(glm_ab)$coefficients[,2]) )
+
+# model 2
+glm_ab_part <- svyglm(outcome_4 ~ AB_nose_infection + postalcode, design = design.ps, family=quasibinomial)
+
+summary(glm_ab_part)
+
+cbind( exp(coef(glm_ab_part)), exp(summary(glm_ab_part)$coefficients[,1] - 1.96*summary(glm_ab_part)$coefficients[,2]), exp(summary(glm_ab_part)$coefficients[,1] + 1.96*summary(glm_ab_part)$coefficients[,2]) )
+
+# model 3
+glm_ab_confounder <- svyglm(
+as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
+                     design = design.ps, family=quasibinomial)
+
+summary(glm_ab_confounder)
+
+cbind( exp(coef(glm_ab_confounder)), exp(summary(glm_ab_confounder)$coefficients[,1] - 1.96*summary(glm_ab_confounder)$coefficients[,2]), exp(summary(glm_ab_confounder)$coefficients[,1] + 1.96*summary(glm_ab_confounder)$coefficients[,2]) )
+
+
+
+###########################
+# %% GLM before matching
+###########################
+#### logistic univariate
+```{r}
+uni<-glm(outcome_4~AB_nose_infection, weights = outcome_weight, data= data_first_treatment_12ow_relevant_0.4, family = binomial)
+
+summary(uni)
+
+# TvE I don't understand the (purpose of the) next command
+cbind( exp(coef(uni)), exp(summary(uni)$coefficients[,1] - 1.96*summary(uni)$coefficients[,2]), exp(summary(uni)$coefficients[,1] + 1.96*summary(uni)$coefficients[,2]) )
+```
+
+
+
+#### logistic multivariate
+```{r}
+unicov <-glm(
+            as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
+            weights = outcome_weight,
+            family = "binomial",
+            data = data_first_treatment_12ow_relevant_0.4
+           )
+
+summary(unicov)
+cbind( exp(coef(unicov)), exp(summary(unicov)$coefficients[,1] - 1.96*summary(unicov)$coefficients[,2]), exp(summary(unicov)$coefficients[,1] + 1.96*summary(unicov)$coefficients[,2]) )
+```
+
+###########################
+## Type AB analysis 
+```{r}
+plot(data_first_treatment_12ow_relevant_0.4$type_AB_nose)
+
+table(data_first_treatment_12ow_relevant_0.4$type_AB_nose)
+```
+
+### Testing before mnps
+#### logistic univariate
+```{r}
+uni_type<-glm(outcome_4 ~ factor(type_AB_nose),weights = outcome_weight, data= data_first_treatment_12ow_relevant_0.4, family = binomial)
+
+summary(uni_type)
+
+cbind( exp(coef(uni_type)), exp(summary(uni_type)$coefficients[,1] - 1.96*summary(uni_type)$coefficients[,2]), exp(summary(uni_type)$coefficients[,1] + 1.96*summary(uni_type)$coefficients[,2]) )
+```
+
+
+#### logistic multivariate
+```{r}
+multi_type <-glm(
+              as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
+              weights = outcome_weight,
+              family = "binomial", data= data_first_treatment_12ow_relevant_0.4) 
+
+summary(multi_type)
+
+cbind( exp(coef(multi_type)), exp(summary(multi_type)$coefficients[,1] - 1.96*summary(multi_type)$coefficients[,2]), exp(summary(multi_type)$coefficients[,1] + 1.96*summary(multi_type)$coefficients[,2]) )
+```
+
+
+###########################ctor
+# %% running of multinomial propensity scores
+###########################
+
+
+MNPS_cto_type <- mnps(
+  as.formula(paste("type_AB_nose ~ ",paste(vars_confounders,collapse="+"),sep="")),
+  data = data_confounders_to,
+  estimand = "ATE",
+  verbose = FALSE,
+  stop.method = c("es.mean", "ks.mean"),
+  n.trees = 5000)
+#Warning message:
+#In ps(formula = currFormula, data = currDat, n.trees = n.trees[i],  :
+#  Optimal number of iterations is close to the specified n.trees. n.trees is likely set too small and better balance might be obtainable by setting n.trees to be larger.
+
+summary(MNPS_cto_type$gbm.obj,
+        n.trees=MNPS_cto_type$desc$ks.mean.ATE$n.trees,
+        plot=TRUE)
+
+summary(MNPS_cto_type)
+mnp.balance<-bal.table(MNPS_cto_type)
+mnp.balance
+write.table(mnp.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181213wqi/mnp.balance_type.csv", sep = ",")
+
+write.table(mnp.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/mnps.balance_typeflu.csv", sep = ",")
+
+plot(MNPS_cto_type, plots = 1) 
+plot(MNPS_cto_type, plots = 2, subset = "es.mean")
+plot(MNPS_cto_type, plots = 3) 
+#Warning message:
+#In plot.mnps(MNPS_cto_type, plots = 3) :
+  #Some effect sizes are larger than 3 and may not have been plotted.
+plot(MNPS_cto_type, plots = 4) 
+plot(MNPS_cto_type, plots = 5) 
+
+data_confounders_to$wt <- get.weights(MNPS_cto_type, stop.method = "es.mean")
+
+design.mnps <- svydesign(ids=~1, weights=~wt*outcome_weight, data=data_confounders_to) 
+## survey
+# model1
+glm_type <- svyglm(outcome_4 ~ type_AB_nose, design = design.mnps,family=quasibinomial)
+
+summary(glm_type)
+
+cbind( exp(coef(glm_type)), exp(summary(glm_type)$coefficients[,1] - 1.96*summary(glm_type)$coefficients[,2]), exp(summary(glm_type)$coefficients[,1] + 1.96*summary(glm_type)$coefficients[,2]) )
+
+# model 2
+glm_type_part <- svyglm(outcome_4 ~ type_AB_nose + season + postalcode, design = design.mnps, family=quasibinomial)
+
+summary(glm_type_part)
+
+cbind( exp(coef(glm_type_part)), exp(summary(glm_type_part)$coefficients[,1] - 1.96*summary(glm_type_part)$coefficients[,2]), exp(summary(glm_type_part)$coefficients[,1] + 1.96*summary(glm_type_part)$coefficients[,2]) )
+
+# model 3
+glm_type_confounder <- svyglm(
+as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
+                     design = design.mnps, family=quasibinomial)
+
+summary(glm_type_confounder)
+
+cbind( exp(coef(glm_type_confounder)), exp(summary(glm_type_confounder)$coefficients[,1] - 1.96*summary(glm_type_confounder)$coefficients[,2]), exp(summary(glm_type_confounder)$coefficients[,1] + 1.96*summary(glm_type_confounder)$coefficients[,2]) )
+
+
+###########################
+# ITE
+# %% synthetic random forest
+###########################
+```{r}
+### treatment using subset data with only no treatment AB 
+AB_0 <- data_first_treatment_12ow_relevant_0.4%>% filter (type_AB_nose == 0) ## control
+
+ regF_0 <- rfsrcSyn(
+  as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
+  data  = AB_0)
+
+### using that syntetic forest to predict outcome of all participants (so wether they had treatment of not)
+ 
+pred.Syn_type_0 <- rfsrcSyn(object = regF_0, 
+                            na.action = "na.impute",
+                            newdata = data_first_treatment_12ow_relevant_0.4)
+
+```
+```{r}
+### treatment using subset data with treatment AB 
+AB_1 <- data_first_treatment_12ow_relevant_0.4%>% filter (AB_nose_infection == 1)
+
+regF_1 <- rfsrcSyn(
+  as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
+  data  = AB_1)
+  
+pred.Syn_AB_1 <- rfsrcSyn(object = regF_1, 
+                          na.action = "na.impute",
+                          newdata = data_first_treatment_12ow_relevant_0.4)
+
+# calculate difference
+data_first_treatment_12ow_relevant_0.4$delta <- (pred.Syn_AB_1$rfSynPred$predicted -  pred.Syn_type_0$rfSynPred$predicted)[,2]
+
+
+fit <- glm(
+  as.formula(paste("delta ~ ", paste(vars_confounders, collapse="+"),sep="")),
+  data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
+
+fit_delta<- summary(fit)
+fit_delta
+
+  variable <- names(fit$coefficients)
+  coef <- coef(fit_delta)[,1]
+  p_value <- coef(fit_delta)[,4]
+  
+  table_AB = data.frame(variable, coef, p_value)
+  write.csv(table_AB, file='fit_delta.csv')
+  
+fit_np <- glm(
+  as.formula(paste("delta ~ ", paste(vars_confounders_np, collapse="+"),sep="")),
+  data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
+
+fit_np_delta<- summary(fit_np)
+fit_np_delta
+
+  variable_np <- names(fit_np$coefficients)
+  coef_np <- coef(fit_np_delta)[,1]
+  p_value_np <- coef(fit_np_delta)[,4]
+  
+  table_AB_np = data.frame(variable_np, coef_np, p_value_np)
+  write.csv(table_AB_np, file='fit_np_delta.csv')  
+  
+  
+fit_nm <- glm(
+  as.formula(paste("delta ~ ", paste(vars_confounders_nm, collapse="+"),sep="")),
+  data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
+
+fit_nm_delta<- summary(fit_nm)
+fit_nm_delta
+
+  variable_nm <- names(fit_nm$coefficients)
+  coef_nm <- coef(fit_nm_delta)[,1]
+  p_value_nm <- coef(fit_nm_delta)[,4]
+  
+  table_AB_nm = data.frame(variable_nm, coef_nm, p_value_nm)
+  write.csv(table_AB_nm, file='fit_nm_delta.csv')  
+  
+fit_npm <- glm(
+  as.formula(paste("delta ~ ", paste(vars_confounders_npm, collapse="+"),sep="")),
+  data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
+
+fit_npm_delta<- summary(fit_npm)
+fit_npm_delta
+
+  variable_npm <- names(fit_npm$coefficients)
+  coef_npm <- coef(fit_npm_delta)[,1]
+  p_value_npm <- coef(fit_npm_delta)[,4]
+  
+  table_AB_npm = data.frame(variable_npm, coef_npm, p_value_npm)
+  write.csv(table_AB_npm, file='fit_npm_delta.csv')    
+  
+anova(fit,fit_np,fit_nm,fit_npm,test="Chisq")
+anova(fit,fit_np)
+anova(fit,fit_nm,test="Chisq")
+anova(fit_nm,fit_nmp)
+```
+
+
+###loop for type 1-5
+
+for (j in 1:5) {
+  
+  AB_j <- data_first_treatment_12ow_relevant_0.4%>% filter (type_AB_nose == j)
+  
+  regF_j <- rfsrcSyn(
+  as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
+  data  = AB_j)
+  
+  pred.Syn_type_j <- rfsrcSyn(object = regF_j, newdata = data_first_treatment_12ow_relevant_0.4)
+  # calculate difference
+  data_first_treatment_12ow_relevant_0.4$delta_j <- (pred.Syn_type_j$rfSynPred$predicted -  pred.Syn_type_0$rfSynPred$predicted)[,2]
+  
+  
+  fit_j <- glm(
+  as.formula(paste(" delta_j ~ ", paste(vars_confounders, collapse="+"),sep="")),
+  data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
+  fit_delta_j<- summary(fit_j)
+  
+  variable <- names(fit_j$coefficients)
+  coef <- coef(fit_delta_j)[,1]
+  p_value <- coef(fit_delta_j)[,4]
+  
+  table = data.frame(variable, coef, p_value)
+  write.csv(table, file=sprintf('fit_delta_%s.csv',j))
+# write.csv(table, file=sprintf('H:/qww/AMC/Utrecht/NIVEL/Thamar/20180823/fit_delta_%s.csv',j))
+  
+  data_first_treatment_12ow_relevant_0.4[,ncol(data_first_treatment_12ow_relevant_0.4)+1]<-data_first_treatment_12ow_relevant_0.4$delta_j
+  names(data_first_treatment_12ow_relevant_0.4)[ncol(data_first_treatment_12ow_relevant_0.4)]<-paste0("delta_",j)
+}
+
+
+
+###########################
+# %% subgroup analysis
+###########################
+
+
+```{r}
+# PRIM with delta coming from binary AB
+PRIM <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, delta))
+
+prim.table<-data.frame(matrix(ncol=(6)))
+colnames(prim.table)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
+
+set.seed(1234)
+
+for (i in 1:10){
+  alpha<-i/100
+  for (j in 1:10){
+    beta<-j/100
+    p.cov<-subgroup.discovery::prim.cover(delta~., data = PRIM,
+                                          peeling.quantile=alpha,
+                                          min.support=beta, 
+                                          plot= FALSE, 
+                                          optimal.box= "2se")
+    rule_cov<-p.cov$covers[[1]]$superrule
+    p.div <- prim.diversify(delta ~ .,
+                                      data = PRIM,
+                                      n = 4,
+                                      peeling.quantile = alpha,
+                                      min.support = beta,
+                                      plot = FALSE,
+                                      optimal.box = "2se")
+    rule_div<-p.div$attempts[[1]]$superrule
+    
+    prim.table[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
+    
+  }
+}
+
+# PRIM with delta coming from binary AB without postalcode
+PRIM_np <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season, nr_contacts_infection, nr_prescriptions_AB, delta))
+
+prim.table_np<-data.frame(matrix(ncol=(6)))
+colnames(prim.table_np)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
+
+set.seed(1234)
+
+for (i in 1:10){
+  alpha<-i/100
+  for (j in 1:10){
+    beta<-j/100
+    p.cov<-subgroup.discovery::prim.cover(delta~., data = PRIM_np,
+                                          peeling.quantile=alpha,
+                                          min.support=beta, 
+                                          plot= FALSE, 
+                                          optimal.box= "2se")
+    rule_cov<-p.cov$covers[[1]]$superrule
+    p.div <- prim.diversify(delta ~ .,
+                                      data = PRIM_np,
+                                      n = 4,
+                                      peeling.quantile = alpha,
+                                      min.support = beta,
+                                      plot = FALSE,
+                                      optimal.box = "2se")
+    rule_div<-p.div$attempts[[1]]$superrule
+    
+    prim.table_np[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
+    
+  }
+}
+
+# PRIM with delta coming from binary AB without NA variables:  nr_contacts_resp,nr_contacts_infection, nr_prescriptions_AB
+PRIM_nm <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode,  delta))
+
+prim.table_nm<-data.frame(matrix(ncol=(6)))
+colnames(prim.table_nm)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
+
+set.seed(1234)
+
+for (i in 1:10){
+  alpha<-i/100
+  for (j in 1:10){
+    beta<-j/100
+    p.cov<-subgroup.discovery::prim.cover(delta~., data = PRIM_nm,
+                                          peeling.quantile=alpha,
+                                          min.support=beta, 
+                                          plot= FALSE, 
+                                          optimal.box= "2se")
+    rule_cov<-p.cov$covers[[1]]$superrule
+    p.div <- prim.diversify(delta ~ .,
+                                      data = PRIM_nm,
+                                      n = 4,
+                                      peeling.quantile = alpha,
+                                      min.support = beta,
+                                      plot = FALSE,
+                                      optimal.box = "2se")
+    rule_div<-p.div$attempts[[1]]$superrule
+    
+    prim.table_nm[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
+    
+  }
+}
+
+# PRIM with delta coming from binary AB without postalcode & NA variables:  nr_contacts_resp,nr_contacts_infection, nr_prescriptions_AB,postalcode
+PRIM_npm <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season, delta))
+
+prim.table_npm<-data.frame(matrix(ncol=(6)))
+colnames(prim.table_npm)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
+
+set.seed(1234)
+
+for (i in 1:10){
+  alpha<-i/100
+  for (j in 1:10){
+    beta<-j/100
+    p.cov<-subgroup.discovery::prim.cover(delta~., data = PRIM_nm,
+                                          peeling.quantile=alpha,
+                                          min.support=beta, 
+                                          plot= FALSE, 
+                                          optimal.box= "2se")
+    rule_cov<-p.cov$covers[[1]]$superrule
+    p.div <- prim.diversify(delta ~ .,
+                                      data = PRIM_nm,
+                                      n = 4,
+                                      peeling.quantile = alpha,
+                                      min.support = beta,
+                                      plot = FALSE,
+                                      optimal.box = "2se")
+    rule_div<-p.div$attempts[[1]]$superrule
+    
+    prim.table_npm[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
+    
+  }
+}
+
+# PRIM with delta coming from  AB TYPE 0 VS 1
+PRIM_1 <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, delta_1))
+
+prim.table_1<-data.frame(matrix(ncol=(6)))
+colnames(prim.table_1)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
+
+set.seed(1234)
+
+for (i in 1:10){
+  alpha<-i/100
+  for (j in 1:10){
+    beta<-j/100
+    p.cov<-subgroup.discovery::prim.cover(delta_1~., data = PRIM_1,
+                                          peeling.quantile=alpha,
+                                          min.support=beta, 
+                                          plot= FALSE, 
+                                          optimal.box= "2se")
+    rule_cov<-p.cov$covers[[1]]$superrule
+    p.div <- prim.diversify(delta_1 ~ .,
+                                      data = PRIM_1,
+                                      n = 4,
+                                      peeling.quantile = alpha,
+                                      min.support = beta,
+                                      plot = FALSE,
+                                      optimal.box = "2se")
+    rule_div<-p.div$attempts[[1]]$superrule
+    
+    prim.table_1[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
+    
+  }
+}
+
+# PRIM with delta coming from  AB TYPE 0 VS 2
+PRIM_2 <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB,delta_2))
+
+prim.table_2<-data.frame(matrix(ncol=(6)))
+colnames(prim.table_2)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
+
+set.seed(1234)
+
+for (i in 1:10){
+  alpha<-i/100
+  for (j in 1:10){
+    beta<-j/100
+    p.cov<-subgroup.discovery::prim.cover(delta_2~., data = PRIM_2,
+                                          peeling.quantile=alpha,
+                                          min.support=beta, 
+                                          plot= FALSE, 
+                                          optimal.box= "2se")
+    rule_cov<-p.cov$covers[[1]]$superrule
+    p.div <- prim.diversify(delta_2 ~ .,
+                                      data = PRIM_2,
+                                      n = 4,
+                                      peeling.quantile = alpha,
+                                      min.support = beta,
+                                      plot = FALSE,
+                                      optimal.box = "2se")
+    rule_div<-p.div$attempts[[1]]$superrule
+    
+    prim.table_2[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
+    
+  }
+}
+
+# PRIM with delta coming from  AB TYPE 0 VS 3
+PRIM_3 <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB,delta_3))
+
+prim.table_3<-data.frame(matrix(ncol=(6)))
+colnames(prim.table_3)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
+
+set.seed(1234)
+
+for (i in 1:10){
+  alpha<-i/100
+  for (j in 1:10){
+    beta<-j/100
+    p.cov<-subgroup.discovery::prim.cover(delta_3~., data = PRIM_3,
+                                          peeling.quantile=alpha,
+                                          min.support=beta, 
+                                          plot= FALSE, 
+                                          optimal.box= "2se")
+    rule_cov<-p.cov$covers[[1]]$superrule
+    p.div <- prim.diversify(delta_3 ~ .,
+                                      data = PRIM_3,
+                                      n = 4,
+                                      peeling.quantile = alpha,
+                                      min.support = beta,
+                                      plot = FALSE,
+                                      optimal.box = "2se")
+    rule_div<-p.div$attempts[[1]]$superrule
+    
+    prim.table_3[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
+    
+  }
+}
+
+# PRIM with delta coming from  AB TYPE 0 VS 4
+PRIM_4 <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, delta_4))
+
+prim.table_4<-data.frame(matrix(ncol=(6)))
+colnames(prim.table_4)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
+
+set.seed(1234)
+
+for (i in 1:10){
+  alpha<-i/100
+  for (j in 1:10){
+    beta<-j/100
+    p.cov<-subgroup.discovery::prim.cover(delta_4~., data = PRIM_4,
+                                          peeling.quantile=alpha,
+                                          min.support=beta, 
+                                          plot= FALSE, 
+                                          optimal.box= "2se")
+    rule_cov<-p.cov$covers[[1]]$superrule
+    p.div <- prim.diversify(delta_4 ~ .,
+                                      data = PRIM_4,
+                                      n = 4,
+                                      peeling.quantile = alpha,
+                                      min.support = beta,
+                                      plot = FALSE,
+                                      optimal.box = "2se")
+    rule_div<-p.div$attempts[[1]]$superrule
+    
+    prim.table_4[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
+    
+  }
+}
+
+```
+
+
+
+
+
+
+
+
+

@@ -72,7 +72,7 @@ setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibio
 # read in data as factor per default
 #data_first_treatment <-read.csv(file = "dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 #data_first_treatment<-read.csv(file = "F:/åå£«/pumc/è¯¾é¢ç»/AMC/Utrecht/NIVEL/Thamar/20180523/dummyfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
-data_first_treatment<-read.csv(file = "H:/qww/AMC/Utrecht/NIVEL/Thamar/20180523/researchfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
+
 
 data_first_treatment <-read.csv(file = "researchfile_firsttreatment.csv", na.strings=c("NA","NaN", " ",""), colClasses="factor")
 
@@ -87,18 +87,33 @@ data_first_treatment$date <- dmy(data_first_treatment$date)
 ###date
 
 hist(data_first_treatment$ days_prev_cont)
+hist(data_first_treatment$age)
+mean((data_first_treatment$age)<18)
+
 nrow(subset(data_first_treatment,outcome_2==1 & outcome_4==0))/nrow(subset(data_first_treatment,outcome_4==0))
 
 mean(month(data_first_treatment$date)==12)
 mean(month(data_first_treatment$date)<4)
-                                                      
+
+data_first_treatment_12ow <- mutate(data_first_treatment, 
+agecat71018 = cut(data_first_treatment$age, c(0,7,10,18,81), right=FALSE))
+
+data_first_treatment_12ow <- mutate(data_first_treatment, 
+agecat1=cut(data_first_treatment$age, seq(0,80,10),labels=c(1:8)))
+
+summary(data_first_treatment_12ow$agecat1)
+table(data_first_treatment_12ow$agecat1,data_first_treatment_12ow$AB_nose_infection)
+
+
 data_first_treatment_12ow <- mutate(data_first_treatment, 
 outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
 
 data_first_treatment_12ow <- mutate(data_first_treatment, 
 ID=seq.int(nrow(data_first_treatment_12ow)), 
-day= date - dmy(01012014),
+day=as.numeric(date - dmy(01012014)),
 flu_epi=ifelse(week(date) %in% c(5:8, 10,11,49:53),1,0),
+agecat1=cut(data_first_treatment$age, seq(0,80,10),labels=c(1:8)),
+agecat71018 = cut(data_first_treatment$age, c(0,7,10,18,81), right=FALSE),
 outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
 
 ```{}
@@ -109,11 +124,13 @@ data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(9:
 data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(1,2,12)] <- "winter"
 data_first_treatment_12ow$season <- factor(data_first_treatment_12ow$season, ordered = TRUE, levels = c("spring", "summer", "autumn", "winter"))
 ```
+str(data_first_treatment_12ow)
 #####################
-setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181213wqi/")
+setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/")
 ### Provide descriptives of all variables
 z<-dfSummary(data_first_treatment_12ow)
 write.table(z, file="descriptives_raw_data_first_treatment_12ow.csv", sep = ",")
+
 
 ###########################
 # %% select variables
@@ -121,7 +138,7 @@ write.table(z, file="descriptives_raw_data_first_treatment_12ow.csv", sep = ",")
 
 setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/4. input R")
 
-vars_selected <-read.csv(file = "variable_selections.csv",sep=',')
+vars_selected <-read.csv(file = "variable_selections.csv",sep=';')
 
 vars_treatment   <- as.character(filter(vars_selected,treatment == 1)$variable)
 vars_outcome     <- as.character(filter(vars_selected,outcome == 1)$variable)
@@ -173,13 +190,13 @@ which(apply(data_first_treatment_12ow_relevant_0.4, 2, var) == 0)
 # %% remove rows with any missing values
 ###########################
 
-# FYI how many rows are deleted (~10000)
-dim(data_first_treatment_12ow_relevant_0.4)[1] - dim(na.omit(data_first_treatment_12ow_relevant_0.4))[1]
-
 data_first_treatment_12ow_relevant_0.4_na.omit <- na.omit(data_first_treatment_12ow_relevant_0.4)
 
 vars_relevant_0.4_na.omit <- names(data_first_treatment_12ow_relevant_0.4_na.omit)
 # TvE: what happens here? (above, nothing?)
+
+# FYI how many rows are deleted (~10000)
+dim(data_first_treatment_12ow_relevant_0.4)[1] - dim(na.omit(data_first_treatment_12ow_relevant_0.4))[1]
 
 ###########################
 # %% descriptive statistics and remove variables with variance = 0 @@@ still gives warning messages about deprecated
@@ -202,7 +219,7 @@ vars_relevant_0.4_na.omit <- names(data_first_treatment_12ow_relevant_0.4_na.omi
 ###########################
 # %% print table one
 ###########################
-setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181213wqi/")
+setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/")
 
 a<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
                      strata="AB_nose_infection",
@@ -220,11 +237,22 @@ b<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
                         data=data_first_treatment_12ow_relevant_0.4,
                         test=TRUE))
  
-write.table(a, file="Unmatched_ab.csv", sep = ",")
-write.table(b, file="Unmatched_type.csv", sep = ",")
+write.table(a, file="Unmatched_ab_0.4.csv", sep = ",")
+write.table(b, file="Unmatched_type_0.4.csv", sep = ",")
 #write.table(c, file="Unmatched_type_test.csv", sep = ",")
 
+a1<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant),
+                     strata="AB_nose_infection",
+                     data=data_first_treatment_12ow_relevant,
+                     test=TRUE))
 
+b1<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant),
+                        strata="type_AB_nose",
+                        data=data_first_treatment_12ow_relevant,
+                        test=TRUE))
+                        
+write.table(a1, file="Unmatched_ab.csv", sep = ",")
+write.table(b1, file="Unmatched_type.csv", sep = ",")
 ###########################
 # %% STEP 1: select variables with OR > 1%
 ###########################
@@ -396,7 +424,7 @@ vars_confounders_np = c(
   "season",
   "nr_contacts_infection",
   "nr_prescriptions_AB",
-  "day"
+   "day"
 )
 
 vars_confounders_nm = c(
@@ -560,9 +588,9 @@ summary(PS_Model$gbm.obj,
 summary(PS_Model)
 ps.balance<-bal.table(PS_Model)
 ps.balance
-#write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181213wqi/ps.balance_ab.csv", sep = ",")
+write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/ps.balance_ab.csv", sep = ",")
 
-write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abflu.csv", sep = ",")
+#write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abflu.csv", sep = ",")
 
 data_confounders_to$w<- get.weights(PS_Model,stop.method = "es.mean" )
 
@@ -579,7 +607,7 @@ summary(glm_ab)
 cbind( exp(coef(glm_ab)), exp(summary(glm_ab)$coefficients[,1] - 1.96*summary(glm_ab)$coefficients[,2]), exp(summary(glm_ab)$coefficients[,1] + 1.96*summary(glm_ab)$coefficients[,2]) )
 
 # model 2
-glm_ab_part <- svyglm(outcome_4 ~ AB_nose_infection + postalcode, design = design.ps, family=quasibinomial)
+glm_ab_part <- svyglm(outcome_4 ~ AB_nose_infection + nr_medication, design = design.ps, family=quasibinomial)
 
 summary(glm_ab_part)
 
@@ -594,34 +622,304 @@ summary(glm_ab_confounder)
 
 cbind( exp(coef(glm_ab_confounder)), exp(summary(glm_ab_confounder)$coefficients[,1] - 1.96*summary(glm_ab_confounder)$coefficients[,2]), exp(summary(glm_ab_confounder)$coefficients[,1] + 1.96*summary(glm_ab_confounder)$coefficients[,2]) )
 
+# model 4
+glm_ab_confounder_nm <- svyglm(
+as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+                     design = design.ps, family=quasibinomial)
 
+summary(glm_ab_confounder_nm)
+
+cbind( exp(coef(glm_ab_confounder_nm)), exp(summary(glm_ab_confounder_nm)$coefficients[,1] - 1.96*summary(glm_ab_confounder_nm)$coefficients[,2]), exp(summary(glm_ab_confounder_nm)$coefficients[,1] + 1.96*summary(glm_ab_confounder_nm)$coefficients[,2]) )
+
+###########################
+# %% Propensity score matching with ps in adults
+
+###########################
+
+
+data_confounders_to$AB<-0
+data_confounders_to$AB[as.numeric(data_confounders_to$AB_nose_infection)==2]<-1
+
+
+set.seed(1)
+PS_Model18<-ps(
+  as.formula(paste("AB ~ ",paste(vars_confounders,collapse="+"),sep="")),
+  data = subset(data_confounders_to, age>=18),
+  verbose = FALSE, 
+  estimand = "ATE")
+
+plot(PS_Model18, plots = 1)
+plot(PS_Model18, plots = 2)
+plot(PS_Model18, plots = 3)
+plot(PS_Model18, plots = 4)
+plot(PS_Model18, plots = 5)
+
+summary(PS_Model18$gbm.obj,
+        n.trees=PS_Model$desc$ks.mean.ATE$n.trees,
+        plot=TRUE)
+summary(PS_Model18)
+ps.balance<-bal.table(PS_Model18)
+ps.balance
+write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/ps.balance_ab18.csv", sep = ",")
+
+#write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abflu.csv", sep = ",")
+
+data_confounders_to18 <- mutate(subset(data_confounders_to, age>=18), 
+w18=get.weights(PS_Model18,stop.method = "es.mean" ))
+
+design.ps18 <- svydesign(ids=~1, weights = ~ w18*outcome_weight, data = data_confounders_to18)
+
+
+## survey
+# model 1
+glm_ab18 <- svyglm(outcome_4 ~ AB_nose_infection, design = design.ps18, family=quasibinomial)
+
+summary(glm_ab18)
+
+cbind( exp(coef(glm_ab18)), exp(summary(glm_ab18)$coefficients[,1] - 1.96*summary(glm_ab18)$coefficients[,2]), exp(summary(glm_ab18)$coefficients[,1] + 1.96*summary(glm_ab18)$coefficients[,2]) )
+
+# model 2
+glm_ab18_part <- svyglm(outcome_4 ~ AB_nose_infection + postalcode, design = design.ps18, family=quasibinomial)
+
+summary(glm_ab18_part)
+
+cbind( exp(coef(glm_ab18_part)), exp(summary(glm_ab18_part)$coefficients[,1] - 1.96*summary(glm_ab18_part)$coefficients[,2]), exp(summary(glm_ab18_part)$coefficients[,1] + 1.96*summary(glm_ab18_part)$coefficients[,2]) )
+
+# model 3
+glm_ab18_confounder <- svyglm(
+as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
+                     design = design.ps18, family=quasibinomial)
+
+summary(glm_ab18_confounder)
+
+cbind( exp(coef(glm_ab18_confounder)), exp(summary(glm_ab18_confounder)$coefficients[,1] - 1.96*summary(glm_ab18_confounder)$coefficients[,2]), exp(summary(glm_ab18_confounder)$coefficients[,1] + 1.96*summary(glm_ab18_confounder)$coefficients[,2]) )
+
+# model 4
+glm_ab18_confounder_nm <- svyglm(
+as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+                     design = design.ps18, family=quasibinomial)
+
+summary(glm_ab18_confounder_nm)
+
+cbind( exp(coef(glm_ab18_confounder_nm)), exp(summary(glm_ab18_confounder_nm)$coefficients[,1] - 1.96*summary(glm_ab18_confounder_nm)$coefficients[,2]), exp(summary(glm_ab18_confounder_nm)$coefficients[,1] + 1.96*summary(glm_ab18_confounder_nm)$coefficients[,2]) )
+
+
+###########################
+# %% Propensity score matching with ps in POPULATION Exclude under 10 
+
+###########################
+
+
+data_confounders_to$AB<-0
+data_confounders_to$AB[as.numeric(data_confounders_to$AB_nose_infection)==2]<-1
+
+
+set.seed(1)
+PS_Model10<-ps(
+  as.formula(paste("AB ~ ",paste(vars_confounders,collapse="+"),sep="")),
+  data = subset(data_confounders_to, age>=10),
+  verbose = FALSE, 
+  estimand = "ATE")
+
+plot(PS_Model10, plots = 1)
+plot(PS_Model10, plots = 2)
+plot(PS_Model10, plots = 3)
+plot(PS_Model10, plots = 4)
+plot(PS_Model10, plots = 5)
+
+summary(PS_Model10$gbm.obj,
+        n.trees=PS_Model$desc$ks.mean.ATE$n.trees,
+        plot=TRUE)
+summary(PS_Model10)
+ps.balance<-bal.table(PS_Model10)
+ps.balance
+write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/ps.balance_ab10.csv", sep = ",")
+
+#write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abflu.csv", sep = ",")
+
+data_confounders_to10 <- mutate(subset(data_confounders_to, age>=10), 
+w10=get.weights(PS_Model10,stop.method = "es.mean" ))
+
+design.ps10 <- svydesign(ids=~1, weights = ~ w10*outcome_weight, data = data_confounders_to10)
+
+
+## survey
+# model 1
+glm_ab10 <- svyglm(outcome_4 ~ AB_nose_infection, design = design.ps10, family=quasibinomial)
+
+summary(glm_ab10)
+
+cbind( exp(coef(glm_ab10)), exp(summary(glm_ab10)$coefficients[,1] - 1.96*summary(glm_ab10)$coefficients[,2]), exp(summary(glm_ab10)$coefficients[,1] + 1.96*summary(glm_ab10)$coefficients[,2]) )
+
+# model 2
+glm_ab10_part <- svyglm(outcome_4 ~ AB_nose_infection + nr_medication, design = design.ps10, family=quasibinomial)
+
+summary(glm_ab10_part)
+
+cbind( exp(coef(glm_ab10_part)), exp(summary(glm_ab10_part)$coefficients[,1] - 1.96*summary(glm_ab10_part)$coefficients[,2]), exp(summary(glm_ab10_part)$coefficients[,1] + 1.96*summary(glm_ab10_part)$coefficients[,2]) )
+
+# model 3
+glm_ab10_confounder <- svyglm(
+as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
+                     design = design.ps10, family=quasibinomial)
+
+summary(glm_ab10_confounder)
+
+cbind( exp(coef(glm_ab10_confounder)), exp(summary(glm_ab10_confounder)$coefficients[,1] - 1.96*summary(glm_ab10_confounder)$coefficients[,2]), exp(summary(glm_ab10_confounder)$coefficients[,1] + 1.96*summary(glm_ab10_confounder)$coefficients[,2]) )
+
+# model 4
+glm_ab10_confounder_nm <- svyglm(
+as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+                     design = design.ps10, family=quasibinomial)
+
+summary(glm_ab10_confounder_nm)
+
+cbind( exp(coef(glm_ab10_confounder_nm)), exp(summary(glm_ab10_confounder_nm)$coefficients[,1] - 1.96*summary(glm_ab10_confounder_nm)$coefficients[,2]), exp(summary(glm_ab10_confounder_nm)$coefficients[,1] + 1.96*summary(glm_ab10_confounder_nm)$coefficients[,2]) )
+
+
+###########################
+# %% Propensity score matching with ps in POPULATION Exclude under 7 
+
+###########################
+
+
+data_confounders_to$AB<-0
+data_confounders_to$AB[as.numeric(data_confounders_to$AB_nose_infection)==2]<-1
+
+
+set.seed(1)
+PS_Model7<-ps(
+  as.formula(paste("AB ~ ",paste(vars_confounders,collapse="+"),sep="")),
+  data = subset(data_confounders_to, age>=7),
+  verbose = FALSE, 
+  estimand = "ATE")
+
+plot(PS_Model7, plots = 1)
+plot(PS_Model7, plots = 2)
+plot(PS_Model7, plots = 3)
+plot(PS_Model7, plots = 4)
+plot(PS_Model7, plots = 5)
+
+summary(PS_Model7$gbm.obj,
+        n.trees=PS_Model$desc$ks.mean.ATE$n.trees,
+        plot=TRUE)
+summary(PS_Model7)
+ps.balance<-bal.table(PS_Model7)
+ps.balance
+write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/ps.balance_ab7.csv", sep = ",")
+
+#write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abflu.csv", sep = ",")
+data_confounders_to7 <- mutate(subset(data_confounders_to, age>=7), 
+w7=get.weights(PS_Model7,stop.method = "es.mean" ))
+
+design.ps7 <- svydesign(ids=~1, weights = ~ w7*outcome_weight, data = data_confounders_to7)
+
+## survey
+# model 1
+glm_ab7 <- svyglm(outcome_4 ~ AB_nose_infection, design = design.ps7, family=quasibinomial)
+
+summary(glm_ab7)
+
+cbind( exp(coef(glm_ab7)), exp(summary(glm_ab7)$coefficients[,1] - 1.96*summary(glm_ab7)$coefficients[,2]), exp(summary(glm_ab7)$coefficients[,1] + 1.96*summary(glm_ab7)$coefficients[,2]) )
+
+# model 2
+glm_ab7_part <- svyglm(outcome_4 ~ AB_nose_infection +  nr_medication, design = design.ps7, family=quasibinomial)
+
+summary(glm_ab7_part)
+
+cbind( exp(coef(glm_ab7_part)), exp(summary(glm_ab7_part)$coefficients[,1] - 1.96*summary(glm_ab7_part)$coefficients[,2]), exp(summary(glm_ab7_part)$coefficients[,1] + 1.96*summary(glm_ab7_part)$coefficients[,2]) )
+
+# model 3
+glm_ab7_confounder <- svyglm(
+as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
+                     design = design.ps7, family=quasibinomial)
+
+summary(glm_ab7_confounder)
+
+cbind( exp(coef(glm_ab7_confounder)), exp(summary(glm_ab7_confounder)$coefficients[,1] - 1.96*summary(glm_ab7_confounder)$coefficients[,2]), exp(summary(glm_ab7_confounder)$coefficients[,1] + 1.96*summary(glm_ab7_confounder)$coefficients[,2]) )
+
+# model 4
+glm_ab7_confounder_nm <- svyglm(
+as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+                     design = design.ps7, family=quasibinomial)
+
+summary(glm_ab7_confounder_nm)
+
+cbind( exp(coef(glm_ab7_confounder_nm)), exp(summary(glm_ab7_confounder_nm)$coefficients[,1] - 1.96*summary(glm_ab7_confounder_nm)$coefficients[,2]), exp(summary(glm_ab7_confounder_nm)$coefficients[,1] + 1.96*summary(glm_ab7_confounder_nm)$coefficients[,2]) )
 
 ###########################
 # %% GLM before matching
 ###########################
 #### logistic univariate
 ```{r}
-uni<-glm(outcome_4~AB_nose_infection, weights = outcome_weight, data= data_first_treatment_12ow_relevant_0.4, family = binomial)
+uni<-glm(outcome_4~AB_nose_infection, weights = outcome_weight, data= data_confounders_to, family = binomial)
 
 summary(uni)
 
-# TvE I don't understand the (purpose of the) next command
 cbind( exp(coef(uni)), exp(summary(uni)$coefficients[,1] - 1.96*summary(uni)$coefficients[,2]), exp(summary(uni)$coefficients[,1] + 1.96*summary(uni)$coefficients[,2]) )
+
+uni18<-glm(outcome_4~AB_nose_infection, weights = outcome_weight, data = subset(data_confounders_to, age>=18), family = binomial)
+
+summary(uni18)
+
+cbind( exp(coef(uni18)), exp(summary(uni18)$coefficients[,1] - 1.96*summary(uni18)$coefficients[,2]), exp(summary(uni18)$coefficients[,1] + 1.96*summary(uni18)$coefficients[,2]) )
+
+
+uni10<-glm(outcome_4~AB_nose_infection, weights = outcome_weight, data = subset(data_confounders_to, age>=10), family = binomial)
+
+summary(uni10)
+
+cbind( exp(coef(uni10)), exp(summary(uni10)$coefficients[,1] - 1.96*summary(uni10)$coefficients[,2]), exp(summary(uni10)$coefficients[,1] + 1.96*summary(uni10)$coefficients[,2]) )
+
+
+uni7<-glm(outcome_4~AB_nose_infection, weights = outcome_weight, data = subset(data_confounders_to, age>=7), family = binomial)
+
+summary(uni7)
+
+cbind( exp(coef(uni7)), exp(summary(uni7)$coefficients[,1] - 1.96*summary(uni7)$coefficients[,2]), exp(summary(uni7)$coefficients[,1] + 1.96*summary(uni7)$coefficients[,2]) )
 ```
+
+
 
 
 
 #### logistic multivariate
 ```{r}
-unicov <-glm(
+uni18cov <-glm(
             as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
             weights = outcome_weight,
             family = "binomial",
-            data = data_first_treatment_12ow_relevant_0.4
+            data = subset(data_confounders_to, age>=18)
            )
 
-summary(unicov)
-cbind( exp(coef(unicov)), exp(summary(unicov)$coefficients[,1] - 1.96*summary(unicov)$coefficients[,2]), exp(summary(unicov)$coefficients[,1] + 1.96*summary(unicov)$coefficients[,2]) )
+summary(uni18cov)
+
+cbind( exp(coef(uni18cov)), exp(summary(uni18cov)$coefficients[,1] - 1.96*summary(uni18cov)$coefficients[,2]), exp(summary(uni18cov)$coefficients[,1] + 1.96*summary(uni18cov)$coefficients[,2]) )
+
+
+uni10cov <-glm(
+            as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
+            weights = outcome_weight,
+            family = "binomial",
+            data = subset(data_confounders_to, age>=10)
+           )
+
+summary(uni10cov)
+
+cbind( exp(coef(uni10cov)), exp(summary(uni10cov)$coefficients[,1] - 1.96*summary(uni10cov)$coefficients[,2]), exp(summary(uni10cov)$coefficients[,1] + 1.96*summary(uni10cov)$coefficients[,2]) )
+
+
+uni7cov <-glm(
+            as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
+            weights = outcome_weight,
+            family = "binomial",
+            data = subset(data_confounders_to, age>=7)
+           )
+
+summary(uni7cov)
+
+cbind( exp(coef(uni7cov)), exp(summary(uni7cov)$coefficients[,1] - 1.96*summary(uni7cov)$coefficients[,2]), exp(summary(uni7cov)$coefficients[,1] + 1.96*summary(uni7cov)$coefficients[,2]) )
+
 ```
 
 ###########################
@@ -635,24 +933,58 @@ table(data_first_treatment_12ow_relevant_0.4$type_AB_nose)
 ### Testing before mnps
 #### logistic univariate
 ```{r}
-uni_type<-glm(outcome_4 ~ factor(type_AB_nose),weights = outcome_weight, data= data_first_treatment_12ow_relevant_0.4, family = binomial)
+uni18_type<-glm(outcome_4 ~ factor(type_AB_nose),weights = outcome_weight, data = subset(data_confounders_to, age>=18), family = binomial)
 
-summary(uni_type)
+summary(uni18_type)
 
-cbind( exp(coef(uni_type)), exp(summary(uni_type)$coefficients[,1] - 1.96*summary(uni_type)$coefficients[,2]), exp(summary(uni_type)$coefficients[,1] + 1.96*summary(uni_type)$coefficients[,2]) )
+cbind( exp(coef(uni18_type)), exp(summary(uni18_type)$coefficients[,1] - 1.96*summary(uni18_type)$coefficients[,2]), exp(summary(uni18_type)$coefficients[,1] + 1.96*summary(uni18_type)$coefficients[,2]) )
+
+
+uni10_type<-glm(outcome_4 ~ factor(type_AB_nose),weights = outcome_weight, data = subset(data_confounders_to, age>=10), family = binomial)
+
+summary(uni10_type)
+
+cbind( exp(coef(uni10_type)), exp(summary(uni10_type)$coefficients[,1] - 1.96*summary(uni10_type)$coefficients[,2]), exp(summary(uni10_type)$coefficients[,1] + 1.96*summary(uni10_type)$coefficients[,2]) )
+
+uni7_type<-glm(outcome_4 ~ factor(type_AB_nose),weights = outcome_weight,  data = subset(data_confounders_to, age>=7), family = binomial)
+
+summary(uni7_type)
+
+cbind( exp(coef(uni7_type)), exp(summary(uni7_type)$coefficients[,1] - 1.96*summary(uni7_type)$coefficients[,2]), exp(summary(uni7_type)$coefficients[,1] + 1.96*summary(uni7_type)$coefficients[,2]) )
+
 ```
 
 
 #### logistic multivariate
 ```{r}
-multi_type <-glm(
+multi_type18 <-glm(
               as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
               weights = outcome_weight,
-              family = "binomial", data= data_first_treatment_12ow_relevant_0.4) 
+              family = "binomial",  data = subset(data_confounders_to, age>=18)) 
 
-summary(multi_type)
+summary(multi_type18)
 
-cbind( exp(coef(multi_type)), exp(summary(multi_type)$coefficients[,1] - 1.96*summary(multi_type)$coefficients[,2]), exp(summary(multi_type)$coefficients[,1] + 1.96*summary(multi_type)$coefficients[,2]) )
+cbind( exp(coef(multi_type18)), exp(summary(multi_type18)$coefficients[,1] - 1.96*summary(multi_type18)$coefficients[,2]), exp(summary(multi_type18)$coefficients[,1] + 1.96*summary(multi_type18)$coefficients[,2]) )
+
+
+multi_type10 <-glm(
+              as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
+              weights = outcome_weight,
+              family = "binomial",  data = subset(data_confounders_to, age>=10)) 
+
+summary(multi_type10)
+
+cbind( exp(coef(multi_type10)), exp(summary(multi_type10)$coefficients[,1] - 1.96*summary(multi_type10)$coefficients[,2]), exp(summary(multi_type10)$coefficients[,1] + 1.96*summary(multi_type10)$coefficients[,2]) )
+
+multi_type7 <-glm(
+              as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
+              weights = outcome_weight,
+              family = "binomial",  data = subset(data_confounders_to, age>=7)) 
+
+summary(multi_type7)
+
+cbind( exp(coef(multi_type7)), exp(summary(multi_type7)$coefficients[,1] - 1.96*summary(multi_type7)$coefficients[,2]), exp(summary(multi_type7)$coefficients[,1] + 1.96*summary(multi_type7)$coefficients[,2]) )
+
 ```
 
 
@@ -679,9 +1011,9 @@ summary(MNPS_cto_type$gbm.obj,
 summary(MNPS_cto_type)
 mnp.balance<-bal.table(MNPS_cto_type)
 mnp.balance
-#write.table(mnp.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181213wqi/mnp.balance_type.csv", sep = ",")
+write.table(mnp.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/mnp.balance_type.csv", sep = ",")
 
-write.table(mnp.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/mnps.balance_typeflu.csv", sep = ",")
+#write.table(mnp.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/mnps.balance_typeflu.csv", sep = ",")
 
 plot(MNPS_cto_type, plots = 1) 
 plot(MNPS_cto_type, plots = 2, subset = "es.mean")
@@ -719,6 +1051,240 @@ summary(glm_type_confounder)
 
 cbind( exp(coef(glm_type_confounder)), exp(summary(glm_type_confounder)$coefficients[,1] - 1.96*summary(glm_type_confounder)$coefficients[,2]), exp(summary(glm_type_confounder)$coefficients[,1] + 1.96*summary(glm_type_confounder)$coefficients[,2]) )
 
+# model 4
+glm_type_confounder_nm <- svyglm(
+as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+                     design = design.mnps, family=quasibinomial)
+
+summary(glm_type_confounder_nm)
+
+cbind( exp(coef(glm_type_confounder_nm)), exp(summary(glm_type_confounder_nm)$coefficients[,1] - 1.96*summary(glm_type_confounder_nm)$coefficients[,2]), exp(summary(glm_type_confounder_nm)$coefficients[,1] + 1.96*summary(glm_type_confounder_nm)$coefficients[,2]) )
+
+
+###########################ctor
+# %% running of multinomial propensity scores in adults
+###########################
+
+
+MNPS_cto_type18 <- mnps(
+  as.formula(paste("type_AB_nose ~ ",paste(vars_confounders,collapse="+"),sep="")),
+  data = subset(data_confounders_to, age>=18),
+  estimand = "ATE",
+  verbose = FALSE,
+  stop.method = c("es.mean", "ks.mean"),
+  n.trees = 5000)
+#Warning message:
+#In ps(formula = currFormula, data = currDat, n.trees = n.trees[i],  :
+#  Optimal number of iterations is close to the specified n.trees. n.trees is likely set too small and better balance might be obtainable by setting n.trees to be larger.
+
+summary(MNPS_cto_type18$gbm.obj,
+        n.trees=MNPS_cto_type18$desc$ks.mean.ATE$n.trees,
+        plot=TRUE)
+
+summary(MNPS_cto_type18)
+mnp.balance18<-bal.table(MNPS_cto_type18)
+mnp.balance18
+write.table(mnp.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/mnp.balance_type18.csv", sep = ",")
+
+#write.table(mnp.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/mnps.balance_typeflu.csv", sep = ",")
+
+plot(MNPS_cto_type18, plots = 1) 
+plot(MNPS_cto_type18, plots = 2, subset = "es.mean")
+plot(MNPS_cto_type18, plots = 3) 
+#Warning message:
+#In plot.mnps(MNPS_cto_type18, plots = 3) :
+  #Some effect sizes are larger than 3 and may not have been plotted.
+plot(MNPS_cto_type18, plots = 4) 
+plot(MNPS_cto_type18, plots = 5) 
+
+data_confounders_to18 <- mutate(subset(data_confounders_to, age>=18), 
+wt18=get.weights(MNPS_cto_type18,stop.method = "es.mean" ))
+
+design.mnps18 <- svydesign(ids=~1, weights = ~ wt18*outcome_weight, data = data_confounders_to18)
+
+## survey
+# model1
+glm_type18 <- svyglm(outcome_4 ~ type_AB_nose, design = design.mnps18,family=quasibinomial)
+
+summary(glm_type18)
+
+cbind( exp(coef(glm_type18)), exp(summary(glm_type18)$coefficients[,1] - 1.96*summary(glm_type18)$coefficients[,2]), exp(summary(glm_type18)$coefficients[,1] + 1.96*summary(glm_type18)$coefficients[,2]) )
+
+# model 2
+glm_type18_part <- svyglm(outcome_4 ~ type_AB_nose + season + postalcode, design = design.mnps18, family=quasibinomial)
+
+summary(glm_type18_part)
+
+cbind( exp(coef(glm_type18_part)), exp(summary(glm_type18_part)$coefficients[,1] - 1.96*summary(glm_type18_part)$coefficients[,2]), exp(summary(glm_type18_part)$coefficients[,1] + 1.96*summary(glm_type18_part)$coefficients[,2]) )
+
+# model 3
+glm_type18_confounder <- svyglm(
+as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
+                     design = design.mnps18, family=quasibinomial)
+
+summary(glm_type18_confounder)
+
+cbind( exp(coef(glm_type18_confounder)), exp(summary(glm_type18_confounder)$coefficients[,1] - 1.96*summary(glm_type18_confounder)$coefficients[,2]), exp(summary(glm_type18_confounder)$coefficients[,1] + 1.96*summary(glm_type18_confounder)$coefficients[,2]) )
+
+# model 4
+glm_type18_confounder_nm <- svyglm(
+as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+                     design = design.mnps18, family=quasibinomial)
+
+summary(glm_type18_confounder_nm)
+
+cbind( exp(coef(glm_type18_confounder_nm)), exp(summary(glm_type18_confounder_nm)$coefficients[,1] - 1.96*summary(glm_type18_confounder_nm)$coefficients[,2]), exp(summary(glm_type18_confounder_nm)$coefficients[,1] + 1.96*summary(glm_type18_confounder_nm)$coefficients[,2]) )
+
+###########################ctor
+# %% running of multinomial propensity scores in population exclude age<10
+###########################
+
+
+MNPS_cto_type10 <- mnps(
+  as.formula(paste("type_AB_nose ~ ",paste(vars_confounders,collapse="+"),sep="")),
+  data = subset(data_confounders_to, age>=10),
+  estimand = "ATE",
+  verbose = FALSE,
+  stop.method = c("es.mean", "ks.mean"),
+  n.trees = 5000)
+#Warning message:
+#In ps(formula = currFormula, data = currDat, n.trees = n.trees[i],  :
+#  Optimal number of iterations is close to the specified n.trees. n.trees is likely set too small and better balance might be obtainable by setting n.trees to be larger.
+
+summary(MNPS_cto_type10$gbm.obj,
+        n.trees=MNPS_cto_type10$desc$ks.mean.ATE$n.trees,
+        plot=TRUE)
+
+summary(MNPS_cto_type10)
+mnp.balance10<-bal.table(MNPS_cto_type10)
+mnp.balance10
+write.table(mnp.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/mnp.balance_type10.csv", sep = ",")
+
+#write.table(mnp.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/mnps.balance_typeflu.csv", sep = ",")
+
+plot(MNPS_cto_type10, plots = 1) 
+plot(MNPS_cto_type10, plots = 2, subset = "es.mean")
+plot(MNPS_cto_type10, plots = 3) 
+#Warning message:
+#In plot.mnps(MNPS_cto_type10, plots = 3) :
+  #Some effect sizes are larger than 3 and may not have been plotted.
+plot(MNPS_cto_type10, plots = 4) 
+plot(MNPS_cto_type10, plots = 5) 
+
+data_confounders_to10 <- mutate(subset(data_confounders_to, age>=10), 
+wt10=get.weights(MNPS_cto_type10,stop.method = "es.mean" ))
+
+design.mnps10 <- svydesign(ids=~1, weights = ~ wt10*outcome_weight, data = data_confounders_to10)
+
+## survey
+# model1
+glm_type10 <- svyglm(outcome_4 ~ type_AB_nose, design = design.mnps10,family=quasibinomial)
+
+summary(glm_type10)
+
+cbind( exp(coef(glm_type10)), exp(summary(glm_type10)$coefficients[,1] - 1.96*summary(glm_type10)$coefficients[,2]), exp(summary(glm_type10)$coefficients[,1] + 1.96*summary(glm_type10)$coefficients[,2]) )
+
+# model 2
+glm_type10_part <- svyglm(outcome_4 ~ type_AB_nose + season + postalcode, design = design.mnps10, family=quasibinomial)
+
+summary(glm_type10_part)
+
+cbind( exp(coef(glm_type10_part)), exp(summary(glm_type10_part)$coefficients[,1] - 1.96*summary(glm_type10_part)$coefficients[,2]), exp(summary(glm_type10_part)$coefficients[,1] + 1.96*summary(glm_type10_part)$coefficients[,2]) )
+
+# model 3
+glm_type10_confounder <- svyglm(
+as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
+                     design = design.mnps10, family=quasibinomial)
+
+summary(glm_type10_confounder)
+
+cbind( exp(coef(glm_type10_confounder)), exp(summary(glm_type10_confounder)$coefficients[,1] - 1.96*summary(glm_type10_confounder)$coefficients[,2]), exp(summary(glm_type10_confounder)$coefficients[,1] + 1.96*summary(glm_type10_confounder)$coefficients[,2]) )
+
+# model 4
+glm_type10_confounder_nm <- svyglm(
+as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+                     design = design.mnps10, family=quasibinomial)
+
+summary(glm_type10_confounder_nm)
+
+cbind( exp(coef(glm_type10_confounder_nm)), exp(summary(glm_type10_confounder_nm)$coefficients[,1] - 1.96*summary(glm_type10_confounder_nm)$coefficients[,2]), exp(summary(glm_type10_confounder_nm)$coefficients[,1] + 1.96*summary(glm_type10_confounder_nm)$coefficients[,2]) )
+
+
+###########################ctor
+# %% running of multinomial propensity scores in population exclude age<7
+###########################
+
+
+MNPS_cto_type7 <- mnps(
+  as.formula(paste("type_AB_nose ~ ",paste(vars_confounders,collapse="+"),sep="")),
+  data = subset(data_confounders_to, age>=7),
+  estimand = "ATE",
+  verbose = FALSE,
+  stop.method = c("es.mean", "ks.mean"),
+  n.trees = 5000)
+#Warning message:
+#In ps(formula = currFormula, data = currDat, n.trees = n.trees[i],  :
+#  Optimal number of iterations is close to the specified n.trees. n.trees is likely set too small and better balance might be obtainable by setting n.trees to be larger.
+
+#summary(MNPS_cto_type7$gbm.obj,
+        n.trees=MNPS_cto_type7$desc$ks.mean.ATE$n.trees,
+        plot=TRUE)
+
+#summary(MNPS_cto_type7)
+mnp.balance7<-bal.table(MNPS_cto_type7)
+#mnp.balance7
+write.table(mnp.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/mnp.balance_type7.csv", sep = ",")
+
+#write.table(mnp.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/mnps.balance_typeflu.csv", sep = ",")
+
+#plot(MNPS_cto_type7, plots = 1) 
+#plot(MNPS_cto_type7, plots = 2, subset = "es.mean")
+#plot(MNPS_cto_type7, plots = 3) 
+#Warning message:
+#In plot.mnps(MNPS_cto_type7, plots = 3) :
+  ##Some effect sizes are larger than 3 and may not have been plotted.
+#plot(MNPS_cto_type7, plots = 4) 
+#plot(MNPS_cto_type7, plots = 5) 
+
+data_confounders_to7 <- mutate(subset(data_confounders_to, age>=7), 
+wt7=get.weights(MNPS_cto_type7,stop.method = "es.mean" ))
+
+design.mnps7 <- svydesign(ids=~1, weights = ~ wt7*outcome_weight, data = data_confounders_to7)
+
+## survey
+# model1
+glm_type7 <- svyglm(outcome_4 ~ type_AB_nose, design = design.mnps7,family=quasibinomial)
+
+summary(glm_type7)
+
+cbind( exp(coef(glm_type7)), exp(summary(glm_type7)$coefficients[,1] - 1.96*summary(glm_type7)$coefficients[,2]), exp(summary(glm_type7)$coefficients[,1] + 1.96*summary(glm_type7)$coefficients[,2]) )
+
+# model 2
+glm_type7_part <- svyglm(outcome_4 ~ type_AB_nose + season + postalcode, design = design.mnps7, family=quasibinomial)
+
+summary(glm_type7_part)
+
+cbind( exp(coef(glm_type7_part)), exp(summary(glm_type7_part)$coefficients[,1] - 1.96*summary(glm_type7_part)$coefficients[,2]), exp(summary(glm_type7_part)$coefficients[,1] + 1.96*summary(glm_type7_part)$coefficients[,2]) )
+
+# model 3
+glm_type7_confounder <- svyglm(
+as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
+                     design = design.mnps7, family=quasibinomial)
+
+summary(glm_type7_confounder)
+
+cbind( exp(coef(glm_type7_confounder)), exp(summary(glm_type7_confounder)$coefficients[,1] - 1.96*summary(glm_type7_confounder)$coefficients[,2]), exp(summary(glm_type7_confounder)$coefficients[,1] + 1.96*summary(glm_type7_confounder)$coefficients[,2]) )
+
+# model 4
+glm_type7_confounder_nm <- svyglm(
+as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+                     design = design.mnps7, family=quasibinomial)
+
+summary(glm_type7_confounder_nm)
+
+cbind( exp(coef(glm_type7_confounder_nm)), exp(summary(glm_type7_confounder_nm)$coefficients[,1] - 1.96*summary(glm_type7_confounder_nm)$coefficients[,2]), exp(summary(glm_type7_confounder_nm)$coefficients[,1] + 1.96*summary(glm_type7_confounder_nm)$coefficients[,2]) )
+
+
 
 ###########################
 # ITE
@@ -731,7 +1297,7 @@ AB_0 <- data_first_treatment_12ow_relevant_0.4%>% filter (type_AB_nose == 0) ## 
  regF_0 <- rfsrcSyn(
   as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
   data  = AB_0)
-#!
+
 ### using that syntetic forest to predict outcome of all participants (so wether they had treatment of not)
  
 pred.Syn_type_0 <- rfsrcSyn(object = regF_0, 
@@ -811,11 +1377,10 @@ fit_npm_delta
   table_AB_npm = data.frame(variable_npm, coef_npm, p_value_npm)
   write.csv(table_AB_npm, file='fit_npm_delta.csv')    
   
-anova(fit,fit_np,fit_nm,fit_npm,test="Chisq")
-anova(fit,fit_np)
-anova(fit,fit_nm,test="Chisq")
-anova(fit_nm,fit_nmp)
 
+anova(fit,fit_np)
+#anova(fit,fit_nm,test="Chisq")
+anova(fit_nm,fit_nmp)
 
 ###loop for type 1-5
 
@@ -858,7 +1423,7 @@ for (j in 1:5) {
 
 
 # PRIM with delta coming from binary AB
-PRIM <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, delta))
+PRIM <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, day, delta))
 
 prim.table<-data.frame(matrix(ncol=(6)))
 colnames(prim.table)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
@@ -1112,7 +1677,6 @@ for (i in 1:10){
     
   }
 }
-
 
 
 

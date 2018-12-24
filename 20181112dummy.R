@@ -101,6 +101,7 @@ data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(6:
 data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(9:11)] <- "autumn"
 data_first_treatment_12ow$season[month(data_first_treatment_12ow$date) %in% c(1,2,12)] <- "winter"
 data_first_treatment_12ow$season <- factor(data_first_treatment_12ow$season, ordered = TRUE, levels = c("spring", "summer", "autumn", "winter"))
+str(data_first_treatment_12ow$week)
 
 ###########################
 # %% select variables
@@ -140,9 +141,11 @@ data_first_treatment_12ow_relevant <- select(data_first_treatment_12ow,vars_rele
 # select only variables with percentage missings less than threshold
 data_first_treatment_12ow_relevant_0.4 <- data_first_treatment_12ow_relevant[, colMeans(is.na(data_first_treatment_12ow_relevant)) <= 0.4]
 
+data_first_treatment_12ow_0.4 <- data_first_treatment_12ow[, colMeans(is.na(data_first_treatment_12ow)) <= 0.4]
+
 # FYI what were the dropped variables?
   setdiff(vars_selected$variable,names(data_first_treatment_12ow_relevant_0.4))
-
+  setdiff(vars_selected$variable,names(data_first_treatment_12ow_0.4))
 # remove dropped variables from variable selection
 vars_relevant_0.4 <- intersect(vars_relevant,names(data_first_treatment_12ow_relevant_0.4))
 
@@ -198,6 +201,12 @@ a<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
                      strata="AB_nose_infection",
                      data=data_first_treatment_12ow_relevant_0.4[,names(data_first_treatment_12ow_relevant_0.4) %in% vars_relevant_0.4, drop = F],
                      test=TRUE))
+
+print(CreateTableOne(vars=names(data_first_treatment_12ow$CRP_values),
+                        strata="AB_nose_infection",
+                        data=data_first_treatment_12ow,
+                        test=TRUE))
+
 
 b<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
                         strata="type_AB_nose",

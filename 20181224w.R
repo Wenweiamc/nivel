@@ -96,25 +96,25 @@ mean(month(data_first_treatment$date)==12)
 mean(month(data_first_treatment$date)<4)
 
 data_first_treatment_12ow <- mutate(data_first_treatment, 
-agecat71018 = cut(data_first_treatment$age, c(0,7,10,18,81), right=FALSE))
+                                    agecat71018 = cut(data_first_treatment$age, c(0,7,10,18,81), right=FALSE))
 
 data_first_treatment_12ow <- mutate(data_first_treatment, 
-agecat1=cut(data_first_treatment$age, seq(0,80,10),labels=c(1:8)))
+                                    agecat1=cut(data_first_treatment$age, seq(0,80,10),labels=c(1:8)))
 
 summary(data_first_treatment_12ow$agecat1)
 table(data_first_treatment_12ow$agecat1,data_first_treatment_12ow$AB_nose_infection)
 
 
 data_first_treatment_12ow <- mutate(data_first_treatment, 
-outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
+                                    outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
 
 data_first_treatment_12ow <- mutate(data_first_treatment, 
-ID=seq.int(nrow(data_first_treatment_12ow)), 
-day=as.numeric(date - dmy(01012014)),
-flu_epi=ifelse(week(date) %in% c(5:8, 10,11,49:53),1,0),
-agecat1=cut(data_first_treatment$age, seq(0,80,10),labels=c(1:8)),
-agecat71018 = cut(data_first_treatment$age, c(0,7,10,18,81), right=FALSE),
-outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
+                                    ID=seq.int(nrow(data_first_treatment_12ow)), 
+                                    day=as.numeric(date - dmy(01012014)),
+                                    flu_epi=ifelse(week(date) %in% c(5:8, 10,11,49:53),1,0),
+                                    agecat1=cut(data_first_treatment$age, seq(0,80,10),labels=c(1:8)),
+                                    agecat71018 = cut(data_first_treatment$age, c(0,7,10,18,81), right=FALSE),
+                                    outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
 
 ```{}
 
@@ -161,8 +161,8 @@ data_first_treatment_12ow_relevant_0.4 <- data_first_treatment_12ow_relevant[, c
 data_first_treatment_12ow_0.4 <- data_first_treatment_12ow[, colMeans(is.na(data_first_treatment_12ow)) <= 0.4]
 
 # FYI what were the dropped variables?
-  setdiff(vars_selected$variable,names(data_first_treatment_12ow_relevant_0.4))
-  setdiff(vars_selected$variable,names(data_first_treatment_12ow_0.4))
+setdiff(vars_selected$variable,names(data_first_treatment_12ow_relevant_0.4))
+setdiff(vars_selected$variable,names(data_first_treatment_12ow_0.4))
 # only CRP due to missings, other dropped variables are not relevant
 
 # remove dropped variables from variable selection
@@ -222,9 +222,9 @@ dim(data_first_treatment_12ow_relevant_0.4)[1] - dim(na.omit(data_first_treatmen
 setwd("P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. Machine learning antibiotica bij ontstekingen/03. Dataverwerking/6. output R/20181221wqi/")
 
 a<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
-                     strata="AB_nose_infection",
-                     data=data_first_treatment_12ow_relevant_0.4[,names(data_first_treatment_12ow_relevant_0.4) %in% vars_relevant_0.4, drop = F],
-                     test=TRUE))
+                        strata="AB_nose_infection",
+                        data=data_first_treatment_12ow_relevant_0.4[,names(data_first_treatment_12ow_relevant_0.4) %in% vars_relevant_0.4, drop = F],
+                        test=TRUE))
 
 b<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
                         strata="type_AB_nose",
@@ -233,24 +233,24 @@ b<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
 
 # TvE added 'c' to test shorter code (result: c=b)                        
 #c<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant_0.4),
-                        strata="type_AB_nose",
-                        data=data_first_treatment_12ow_relevant_0.4,
-                        test=TRUE))
- 
+strata="type_AB_nose",
+data=data_first_treatment_12ow_relevant_0.4,
+test=TRUE))
+
 write.table(a, file="Unmatched_ab_0.4.csv", sep = ",")
 write.table(b, file="Unmatched_type_0.4.csv", sep = ",")
 #write.table(c, file="Unmatched_type_test.csv", sep = ",")
 
 a1<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant),
-                     strata="AB_nose_infection",
-                     data=data_first_treatment_12ow_relevant,
-                     test=TRUE))
+                         strata="AB_nose_infection",
+                         data=data_first_treatment_12ow_relevant,
+                         test=TRUE))
 
 b1<-print(CreateTableOne(vars=names(data_first_treatment_12ow_relevant),
-                        strata="type_AB_nose",
-                        data=data_first_treatment_12ow_relevant,
-                        test=TRUE))
-                        
+                         strata="type_AB_nose",
+                         data=data_first_treatment_12ow_relevant,
+                         test=TRUE))
+
 write.table(a1, file="Unmatched_ab.csv", sep = ",")
 write.table(b1, file="Unmatched_type.csv", sep = ",")
 ###########################
@@ -274,15 +274,15 @@ summary(model_OR)
 vars_relevant_0.4_nto <- vars_relevant_0.4[!vars_relevant_0.4%in% c("outcome_4","AB_nose_infection","type_AB_nose")]
 
 rate <- sapply(vars_relevant_0.4_nto,
-       function(varname){
-         md <-glm(
-                as.formula(paste("outcome_4 ~ AB_nose_infection + ",varname)),
-                family=binomial(link=logit),
-                data=data_first_treatment_12ow_relevant_0.4
-              )
-         rate <- abs(exp(summary(md)$coef[2])-OR1)/OR1
-       }
-     )
+               function(varname){
+                 md <-glm(
+                   as.formula(paste("outcome_4 ~ AB_nose_infection + ",varname)),
+                   family=binomial(link=logit),
+                   data=data_first_treatment_12ow_relevant_0.4
+                 )
+                 rate <- abs(exp(summary(md)$coef[2])-OR1)/OR1
+               }
+)
 
 # drop the variables that have OR =< 1%
 vars_OR <- labels(rate)[unlist(rate)> 0.01]
@@ -298,7 +298,7 @@ model_AICo <- glm(
   weights = outcome_weight,
   data = dplyr::select(data_first_treatment_12ow_relevant_0.4_na.omit, - vars_treatment),
   family=binomial)
-  
+
 # Select most predictive variables
 AICo <- stepAIC(model_AICo)
 # FYI show formula of the final model
@@ -330,12 +330,12 @@ vars_AICt <- attr(terms(AICt),"term.labels")
 ###########################
 
 models <- lapply(vars_AICt,
-  function(x) {
-    glm(substitute(outcome_4 ~ i, list(i = as.name(x))),
-    weights = outcome_weight,
-        family = binomial,
-        data = select(data_first_treatment_12ow_relevant_0.4_na.omit,-vars_treatment))
-  }
+                 function(x) {
+                   glm(substitute(outcome_4 ~ i, list(i = as.name(x))),
+                       weights = outcome_weight,
+                       family = binomial,
+                       data = select(data_first_treatment_12ow_relevant_0.4_na.omit,-vars_treatment))
+                 }
 )
 
 lapply(models, summary)
@@ -349,30 +349,30 @@ lapply(models, summary)
 data_first_treatment_12ow_relevant_do_4 <- select(data_first_treatment_12ow_relevant,-outcome_4)
 
 uni <- lapply(names(data_first_treatment_12ow_relevant_do_4),
-function(var){
-uni<-glm(
-as.formula(paste("outcome_4 ~", var)), 
-data= data_first_treatment_12ow_relevant, family = binomial)
-summary(uni)
-})
+              function(var){
+                uni<-glm(
+                  as.formula(paste("outcome_4 ~", var)), 
+                  data= data_first_treatment_12ow_relevant, family = binomial)
+                summary(uni)
+              })
 
 capture.output(uni, file = "Uni.doc")
 
 uni_w <- glm(outcome_4 ~ AB_nose_infection, 
-            weights = outcome_weight,
-            family = "binomial",
-            data = data_first_treatment_12ow_relevant_0.4)
+             weights = outcome_weight,
+             family = "binomial",
+             data = data_first_treatment_12ow_relevant_0.4)
 summary(uni_w)
 
 #### logistic multivariate
 vars_relevant_0.4_nto <- vars_relevant_0.4[!vars_relevant_0.4%in% c("outcome_4","AB_nose_infection","type_AB_nose")]
 
 multicov_w <-glm(
-          as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_relevant_0.4_nto, collapse="+"),sep="")),
-            weights = outcome_weight,
-            family = "binomial",
-            data = data_first_treatment_12ow_relevant_0.4
-           )
+  as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_relevant_0.4_nto, collapse="+"),sep="")),
+  weights = outcome_weight,
+  family = "binomial",
+  data = data_first_treatment_12ow_relevant_0.4
+)
 
 summary(multicov_w)
 
@@ -407,7 +407,7 @@ vars_confounders = c(
 )
 
 vars_confounders_np = c(
-   "age",
+  "age",
   "sex",
   "nr_medication",
   "COPD_morb",
@@ -424,11 +424,11 @@ vars_confounders_np = c(
   "season",
   "nr_contacts_infection",
   "nr_prescriptions_AB",
-   "day"
+  "day"
 )
 
 vars_confounders_nm = c(
-   "age",
+  "age",
   "sex",
   "nr_medication",
   "COPD_morb",
@@ -443,11 +443,11 @@ vars_confounders_nm = c(
   "flu_epi",
   "season",
   "postalcode",
-   "day"
+  "day"
 )
 
 vars_confounders_npm = c(
-   "age",
+  "age",
   "sex",
   "nr_medication",
   "COPD_morb",
@@ -461,12 +461,12 @@ vars_confounders_npm = c(
   "hartfalen_morb",
   "flu_epi",
   "season",
-   "day"
+  "day"
 )
 
 data_confounders_to <- data_first_treatment_12ow_relevant[c(
   "outcome_4","AB_nose_infection","type_AB_nose", "outcome_weight", "ID", 
-   "age",
+  "age",
   "sex",
   "nr_medication",
   "COPD_morb",
@@ -484,13 +484,13 @@ data_confounders_to <- data_first_treatment_12ow_relevant[c(
   "postalcode",
   "nr_contacts_infection",
   "nr_prescriptions_AB",
-   "day"
-  )]        
+  "day"
+)]        
 
 
 data_confounders <- data_first_treatment_12ow_relevant[c(
   "ID",
-    "age",
+  "age",
   "sex",
   "nr_medication",
   "COPD_morb",
@@ -508,10 +508,10 @@ data_confounders <- data_first_treatment_12ow_relevant[c(
   "postalcode",
   "nr_contacts_infection",
   "nr_prescriptions_AB",
-   "day"
-  )] 
-  
-  
+  "day"
+)] 
+
+
 s<-dfSummary(data_confounders_to)
 write.table(s, file="descriptives_cto.csv", sep = ",")
 
@@ -615,8 +615,8 @@ cbind( exp(coef(glm_ab_part)), exp(summary(glm_ab_part)$coefficients[,1] - 1.96*
 
 # model 3
 glm_ab_confounder <- svyglm(
-as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
-                     design = design.ps, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
+  design = design.ps, family=quasibinomial)
 
 summary(glm_ab_confounder)
 
@@ -624,8 +624,8 @@ cbind( exp(coef(glm_ab_confounder)), exp(summary(glm_ab_confounder)$coefficients
 
 # model 4
 glm_ab_confounder_nm <- svyglm(
-as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
-                     design = design.ps, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+  design = design.ps, family=quasibinomial)
 
 summary(glm_ab_confounder_nm)
 
@@ -665,7 +665,7 @@ write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. M
 #write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abflu.csv", sep = ",")
 
 data_confounders_to18 <- mutate(subset(data_confounders_to, age>=18), 
-w18=get.weights(PS_Model18,stop.method = "es.mean" ))
+                                w18=get.weights(PS_Model18,stop.method = "es.mean" ))
 
 design.ps18 <- svydesign(ids=~1, weights = ~ w18*outcome_weight, data = data_confounders_to18)
 
@@ -687,8 +687,8 @@ cbind( exp(coef(glm_ab18_part)), exp(summary(glm_ab18_part)$coefficients[,1] - 1
 
 # model 3
 glm_ab18_confounder <- svyglm(
-as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
-                     design = design.ps18, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
+  design = design.ps18, family=quasibinomial)
 
 summary(glm_ab18_confounder)
 
@@ -696,8 +696,8 @@ cbind( exp(coef(glm_ab18_confounder)), exp(summary(glm_ab18_confounder)$coeffici
 
 # model 4
 glm_ab18_confounder_nm <- svyglm(
-as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
-                     design = design.ps18, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+  design = design.ps18, family=quasibinomial)
 
 summary(glm_ab18_confounder_nm)
 
@@ -738,7 +738,7 @@ write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. M
 #write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abflu.csv", sep = ",")
 
 data_confounders_to10 <- mutate(subset(data_confounders_to, age>=10), 
-w10=get.weights(PS_Model10,stop.method = "es.mean" ))
+                                w10=get.weights(PS_Model10,stop.method = "es.mean" ))
 
 design.ps10 <- svydesign(ids=~1, weights = ~ w10*outcome_weight, data = data_confounders_to10)
 
@@ -760,8 +760,8 @@ cbind( exp(coef(glm_ab10_part)), exp(summary(glm_ab10_part)$coefficients[,1] - 1
 
 # model 3
 glm_ab10_confounder <- svyglm(
-as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
-                     design = design.ps10, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
+  design = design.ps10, family=quasibinomial)
 
 summary(glm_ab10_confounder)
 
@@ -769,8 +769,8 @@ cbind( exp(coef(glm_ab10_confounder)), exp(summary(glm_ab10_confounder)$coeffici
 
 # model 4
 glm_ab10_confounder_nm <- svyglm(
-as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
-                     design = design.ps10, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+  design = design.ps10, family=quasibinomial)
 
 summary(glm_ab10_confounder_nm)
 
@@ -810,7 +810,7 @@ write.table(ps.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. M
 
 #write.table(ps.balance, file="H:/qww/AMC/Utrecht/NIVEL/writing/tables/ps.balance_abflu.csv", sep = ",")
 data_confounders_to7 <- mutate(subset(data_confounders_to, age>=7), 
-w7=get.weights(PS_Model7,stop.method = "es.mean" ))
+                               w7=get.weights(PS_Model7,stop.method = "es.mean" ))
 
 design.ps7 <- svydesign(ids=~1, weights = ~ w7*outcome_weight, data = data_confounders_to7)
 
@@ -831,8 +831,8 @@ cbind( exp(coef(glm_ab7_part)), exp(summary(glm_ab7_part)$coefficients[,1] - 1.9
 
 # model 3
 glm_ab7_confounder <- svyglm(
-as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
-                     design = design.ps7, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders,collapse="+"),sep="")), 
+  design = design.ps7, family=quasibinomial)
 
 summary(glm_ab7_confounder)
 
@@ -840,8 +840,8 @@ cbind( exp(coef(glm_ab7_confounder)), exp(summary(glm_ab7_confounder)$coefficien
 
 # model 4
 glm_ab7_confounder_nm <- svyglm(
-as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
-                     design = design.ps7, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ AB_nose_infection +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+  design = design.ps7, family=quasibinomial)
 
 summary(glm_ab7_confounder_nm)
 
@@ -886,11 +886,11 @@ cbind( exp(coef(uni7)), exp(summary(uni7)$coefficients[,1] - 1.96*summary(uni7)$
 #### logistic multivariate
 ```{r}
 uni18cov <-glm(
-            as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
-            weights = outcome_weight,
-            family = "binomial",
-            data = subset(data_confounders_to, age>=18)
-           )
+  as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
+  weights = outcome_weight,
+  family = "binomial",
+  data = subset(data_confounders_to, age>=18)
+)
 
 summary(uni18cov)
 
@@ -898,11 +898,11 @@ cbind( exp(coef(uni18cov)), exp(summary(uni18cov)$coefficients[,1] - 1.96*summar
 
 
 uni10cov <-glm(
-            as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
-            weights = outcome_weight,
-            family = "binomial",
-            data = subset(data_confounders_to, age>=10)
-           )
+  as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
+  weights = outcome_weight,
+  family = "binomial",
+  data = subset(data_confounders_to, age>=10)
+)
 
 summary(uni10cov)
 
@@ -910,11 +910,11 @@ cbind( exp(coef(uni10cov)), exp(summary(uni10cov)$coefficients[,1] - 1.96*summar
 
 
 uni7cov <-glm(
-            as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
-            weights = outcome_weight,
-            family = "binomial",
-            data = subset(data_confounders_to, age>=7)
-           )
+  as.formula(paste("outcome_4 ~ AB_nose_infection + ", paste(vars_confounders, collapse="+"),sep="")),
+  weights = outcome_weight,
+  family = "binomial",
+  data = subset(data_confounders_to, age>=7)
+)
 
 summary(uni7cov)
 
@@ -958,9 +958,9 @@ cbind( exp(coef(uni7_type)), exp(summary(uni7_type)$coefficients[,1] - 1.96*summ
 #### logistic multivariate
 ```{r}
 multi_type18 <-glm(
-              as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
-              weights = outcome_weight,
-              family = "binomial",  data = subset(data_confounders_to, age>=18)) 
+  as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
+  weights = outcome_weight,
+  family = "binomial",  data = subset(data_confounders_to, age>=18)) 
 
 summary(multi_type18)
 
@@ -968,18 +968,18 @@ cbind( exp(coef(multi_type18)), exp(summary(multi_type18)$coefficients[,1] - 1.9
 
 
 multi_type10 <-glm(
-              as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
-              weights = outcome_weight,
-              family = "binomial",  data = subset(data_confounders_to, age>=10)) 
+  as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
+  weights = outcome_weight,
+  family = "binomial",  data = subset(data_confounders_to, age>=10)) 
 
 summary(multi_type10)
 
 cbind( exp(coef(multi_type10)), exp(summary(multi_type10)$coefficients[,1] - 1.96*summary(multi_type10)$coefficients[,2]), exp(summary(multi_type10)$coefficients[,1] + 1.96*summary(multi_type10)$coefficients[,2]) )
 
 multi_type7 <-glm(
-              as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
-              weights = outcome_weight,
-              family = "binomial",  data = subset(data_confounders_to, age>=7)) 
+  as.formula(paste("outcome_4 ~ type_AB_nose + ", paste(vars_confounders, collapse="+"),sep="")),
+  weights = outcome_weight,
+  family = "binomial",  data = subset(data_confounders_to, age>=7)) 
 
 summary(multi_type7)
 
@@ -1020,7 +1020,7 @@ plot(MNPS_cto_type, plots = 2, subset = "es.mean")
 plot(MNPS_cto_type, plots = 3) 
 #Warning message:
 #In plot.mnps(MNPS_cto_type, plots = 3) :
-  #Some effect sizes are larger than 3 and may not have been plotted.
+#Some effect sizes are larger than 3 and may not have been plotted.
 plot(MNPS_cto_type, plots = 4) 
 plot(MNPS_cto_type, plots = 5) 
 
@@ -1052,8 +1052,8 @@ cbind( exp(coef(glm_type_part_np)), exp(summary(glm_type_part_np)$coefficients[,
 
 # model 4
 glm_type_confounder <- svyglm(
-as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
-                     design = design.mnps, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
+  design = design.mnps, family=quasibinomial)
 
 summary(glm_type_confounder)
 
@@ -1061,8 +1061,8 @@ cbind( exp(coef(glm_type_confounder)), exp(summary(glm_type_confounder)$coeffici
 
 # model 5
 glm_type_confounder_nm <- svyglm(
-as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
-                     design = design.mnps, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+  design = design.mnps, family=quasibinomial)
 
 summary(glm_type_confounder_nm)
 
@@ -1101,12 +1101,12 @@ plot(MNPS_cto_type18, plots = 2, subset = "es.mean")
 plot(MNPS_cto_type18, plots = 3) 
 #Warning message:
 #In plot.mnps(MNPS_cto_type18, plots = 3) :
-  #Some effect sizes are larger than 3 and may not have been plotted.
+#Some effect sizes are larger than 3 and may not have been plotted.
 plot(MNPS_cto_type18, plots = 4) 
 plot(MNPS_cto_type18, plots = 5) 
 
 data_confounders_to18 <- mutate(subset(data_confounders_to, age>=18), 
-wt18=get.weights(MNPS_cto_type18,stop.method = "es.mean" ))
+                                wt18=get.weights(MNPS_cto_type18,stop.method = "es.mean" ))
 
 design.mnps18 <- svydesign(ids=~1, weights = ~ wt18*outcome_weight, data = data_confounders_to18)
 
@@ -1133,19 +1133,19 @@ summary(glm_type18_part_np )
 
 cbind( exp(coef(glm_type18_part_np )), exp(summary(glm_type18_part_np )$coefficients[,1] - 1.96*summary(glm_type18_part_np )$coefficients[,2]), exp(summary(glm_type18_part_np )$coefficients[,1] + 1.96*summary(glm_type18_part_np )$coefficients[,2]) )
 
-# model 3
+# model 4
 glm_type18_confounder <- svyglm(
-as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
-                     design = design.mnps18, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
+  design = design.mnps18, family=quasibinomial)
 
 summary(glm_type18_confounder)
 
 cbind( exp(coef(glm_type18_confounder)), exp(summary(glm_type18_confounder)$coefficients[,1] - 1.96*summary(glm_type18_confounder)$coefficients[,2]), exp(summary(glm_type18_confounder)$coefficients[,1] + 1.96*summary(glm_type18_confounder)$coefficients[,2]) )
 
-# model 4
+# model 5
 glm_type18_confounder_nm <- svyglm(
-as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
-                     design = design.mnps18, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+  design = design.mnps18, family=quasibinomial)
 
 summary(glm_type18_confounder_nm)
 
@@ -1183,12 +1183,12 @@ plot(MNPS_cto_type10, plots = 2, subset = "es.mean")
 plot(MNPS_cto_type10, plots = 3) 
 #Warning message:
 #In plot.mnps(MNPS_cto_type10, plots = 3) :
-  #Some effect sizes are larger than 3 and may not have been plotted.
+#Some effect sizes are larger than 3 and may not have been plotted.
 plot(MNPS_cto_type10, plots = 4) 
 plot(MNPS_cto_type10, plots = 5) 
 
 data_confounders_to10 <- mutate(subset(data_confounders_to, age>=10), 
-wt10=get.weights(MNPS_cto_type10,stop.method = "es.mean" ))
+                                wt10=get.weights(MNPS_cto_type10,stop.method = "es.mean" ))
 
 design.mnps10 <- svydesign(ids=~1, weights = ~ wt10*outcome_weight, data = data_confounders_to10)
 
@@ -1216,8 +1216,8 @@ cbind( exp(coef(glm_type10_part_np)), exp(summary(glm_type10_part_np)$coefficien
 
 # model 4
 glm_type10_confounder <- svyglm(
-as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
-                     design = design.mnps10, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
+  design = design.mnps10, family=quasibinomial)
 
 summary(glm_type10_confounder)
 
@@ -1225,8 +1225,8 @@ cbind( exp(coef(glm_type10_confounder)), exp(summary(glm_type10_confounder)$coef
 
 # model 5
 glm_type10_confounder_nm <- svyglm(
-as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
-                     design = design.mnps10, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+  design = design.mnps10, family=quasibinomial)
 
 summary(glm_type10_confounder_nm)
 
@@ -1250,8 +1250,8 @@ MNPS_cto_type7 <- mnps(
 #  Optimal number of iterations is close to the specified n.trees. n.trees is likely set too small and better balance might be obtainable by setting n.trees to be larger.
 
 #summary(MNPS_cto_type7$gbm.obj,
-        n.trees=MNPS_cto_type7$desc$ks.mean.ATE$n.trees,
-        plot=TRUE)
+n.trees=MNPS_cto_type7$desc$ks.mean.ATE$n.trees,
+plot=TRUE)
 
 #summary(MNPS_cto_type7)
 mnp.balance7<-bal.table(MNPS_cto_type7)
@@ -1265,12 +1265,12 @@ write.table(mnp.balance, file="P:/NZR/NZR-001/Innovatieve Onderzoeksmethoden/2. 
 #plot(MNPS_cto_type7, plots = 3) 
 #Warning message:
 #In plot.mnps(MNPS_cto_type7, plots = 3) :
-  ##Some effect sizes are larger than 3 and may not have been plotted.
+##Some effect sizes are larger than 3 and may not have been plotted.
 #plot(MNPS_cto_type7, plots = 4) 
 #plot(MNPS_cto_type7, plots = 5) 
 
 data_confounders_to7 <- mutate(subset(data_confounders_to, age>=7), 
-wt7=get.weights(MNPS_cto_type7,stop.method = "es.mean" ))
+                               wt7=get.weights(MNPS_cto_type7,stop.method = "es.mean" ))
 
 design.mnps7 <- svydesign(ids=~1, weights = ~ wt7*outcome_weight, data = data_confounders_to7)
 
@@ -1299,8 +1299,8 @@ cbind( exp(coef(glm_type7_part_np)), exp(summary(glm_type7_part_np)$coefficients
 
 # model 4
 glm_type7_confounder <- svyglm(
-as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
-                     design = design.mnps7, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders,collapse="+"),sep="")), 
+  design = design.mnps7, family=quasibinomial)
 
 summary(glm_type7_confounder)
 
@@ -1308,8 +1308,8 @@ cbind( exp(coef(glm_type7_confounder)), exp(summary(glm_type7_confounder)$coeffi
 
 # model 5
 glm_type7_confounder_nm <- svyglm(
-as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
-                     design = design.mnps7, family=quasibinomial)
+  as.formula(paste("outcome_4 ~ type_AB_nose +",paste(vars_confounders_nm,collapse="+"),sep="")), 
+  design = design.mnps7, family=quasibinomial)
 
 summary(glm_type7_confounder_nm)
 
@@ -1325,12 +1325,12 @@ cbind( exp(coef(glm_type7_confounder_nm)), exp(summary(glm_type7_confounder_nm)$
 ### treatment using subset data with only no treatment AB 
 AB_0 <- data_first_treatment_12ow_relevant_0.4%>% filter (type_AB_nose == 0) ## control
 
- regF_0 <- rfsrcSyn(
+regF_0 <- rfsrcSyn(
   as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
   data  = AB_0)
 
 ### using that syntetic forest to predict outcome of all participants (so wether they had treatment of not)
- 
+
 pred.Syn_type_0 <- rfsrcSyn(object = regF_0, 
                             na.action = "na.impute",
                             newdata = data_first_treatment_12ow_relevant_0.4)
@@ -1342,7 +1342,7 @@ AB_1 <- data_first_treatment_12ow_relevant_0.4%>% filter (AB_nose_infection == 1
 regF_1 <- rfsrcSyn(
   as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
   data  = AB_1)
-  
+
 pred.Syn_AB_1 <- rfsrcSyn(object = regF_1, 
                           na.action = "na.impute",
                           newdata = data_first_treatment_12ow_relevant_0.4)
@@ -1358,13 +1358,13 @@ fit <- glm(
 fit_delta<- summary(fit)
 fit_delta
 
-  variable <- names(fit$coefficients)
-  coef <- coef(fit_delta)[,1]
-  p_value <- coef(fit_delta)[,4]
-  
-  table_AB = data.frame(variable, coef, p_value)
-  write.csv(table_AB, file='fit_delta.csv')
-  
+variable <- names(fit$coefficients)
+coef <- coef(fit_delta)[,1]
+p_value <- coef(fit_delta)[,4]
+
+table_AB = data.frame(variable, coef, p_value)
+write.csv(table_AB, file='fit_delta.csv')
+
 fit_np <- glm(
   as.formula(paste("delta ~ ", paste(vars_confounders_np, collapse="+"),sep="")),
   data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
@@ -1372,14 +1372,14 @@ fit_np <- glm(
 fit_np_delta<- summary(fit_np)
 fit_np_delta
 
-  variable_np <- names(fit_np$coefficients)
-  coef_np <- coef(fit_np_delta)[,1]
-  p_value_np <- coef(fit_np_delta)[,4]
-  
-  table_AB_np = data.frame(variable_np, coef_np, p_value_np)
-  write.csv(table_AB_np, file='fit_np_delta.csv')  
-  
-  
+variable_np <- names(fit_np$coefficients)
+coef_np <- coef(fit_np_delta)[,1]
+p_value_np <- coef(fit_np_delta)[,4]
+
+table_AB_np = data.frame(variable_np, coef_np, p_value_np)
+write.csv(table_AB_np, file='fit_np_delta.csv')  
+
+
 fit_nm <- glm(
   as.formula(paste("delta ~ ", paste(vars_confounders_nm, collapse="+"),sep="")),
   data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
@@ -1387,13 +1387,13 @@ fit_nm <- glm(
 fit_nm_delta<- summary(fit_nm)
 fit_nm_delta
 
-  variable_nm <- names(fit_nm$coefficients)
-  coef_nm <- coef(fit_nm_delta)[,1]
-  p_value_nm <- coef(fit_nm_delta)[,4]
-  
-  table_AB_nm = data.frame(variable_nm, coef_nm, p_value_nm)
-  write.csv(table_AB_nm, file='fit_nm_delta.csv')  
-  
+variable_nm <- names(fit_nm$coefficients)
+coef_nm <- coef(fit_nm_delta)[,1]
+p_value_nm <- coef(fit_nm_delta)[,4]
+
+table_AB_nm = data.frame(variable_nm, coef_nm, p_value_nm)
+write.csv(table_AB_nm, file='fit_nm_delta.csv')  
+
 fit_npm <- glm(
   as.formula(paste("delta ~ ", paste(vars_confounders_npm, collapse="+"),sep="")),
   data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
@@ -1401,13 +1401,13 @@ fit_npm <- glm(
 fit_npm_delta<- summary(fit_npm)
 fit_npm_delta
 
-  variable_npm <- names(fit_npm$coefficients)
-  coef_npm <- coef(fit_npm_delta)[,1]
-  p_value_npm <- coef(fit_npm_delta)[,4]
-  
-  table_AB_npm = data.frame(variable_npm, coef_npm, p_value_npm)
-  write.csv(table_AB_npm, file='fit_npm_delta.csv')    
-  
+variable_npm <- names(fit_npm$coefficients)
+coef_npm <- coef(fit_npm_delta)[,1]
+p_value_npm <- coef(fit_npm_delta)[,4]
+
+table_AB_npm = data.frame(variable_npm, coef_npm, p_value_npm)
+write.csv(table_AB_npm, file='fit_npm_delta.csv')    
+
 
 anova(fit,fit_np)
 #anova(fit,fit_nm,test="Chisq")
@@ -1420,8 +1420,8 @@ for (j in 1:5) {
   AB_j <- data_first_treatment_12ow_relevant_0.4%>% filter (type_AB_nose == j)
   
   regF_j <- rfsrcSyn(
-  as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
-  data  = AB_j)
+    as.formula(paste("outcome_4 ~ ", paste(vars_confounders, collapse="+"),sep="")),
+    data  = AB_j)
   
   pred.Syn_type_j <- rfsrcSyn(object = regF_j, newdata = data_first_treatment_12ow_relevant_0.4)
   # calculate difference
@@ -1429,8 +1429,8 @@ for (j in 1:5) {
   
   
   fit_j <- glm(
-  as.formula(paste(" delta_j ~ ", paste(vars_confounders, collapse="+"),sep="")),
-  data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
+    as.formula(paste(" delta_j ~ ", paste(vars_confounders, collapse="+"),sep="")),
+    data  = data_first_treatment_12ow_relevant_0.4, family = gaussian)
   fit_delta_j<- summary(fit_j)
   
   variable <- names(fit_j$coefficients)
@@ -1439,7 +1439,7 @@ for (j in 1:5) {
   
   table = data.frame(variable, coef, p_value)
   write.csv(table, file=sprintf('fit_delta_%s.csv',j))
-# write.csv(table, file=sprintf('H:/qww/AMC/Utrecht/NIVEL/Thamar/20180823/fit_delta_%s.csv',j))
+  # write.csv(table, file=sprintf('H:/qww/AMC/Utrecht/NIVEL/Thamar/20180823/fit_delta_%s.csv',j))
   
   data_first_treatment_12ow_relevant_0.4[,ncol(data_first_treatment_12ow_relevant_0.4)+1]<-data_first_treatment_12ow_relevant_0.4$delta_j
   names(data_first_treatment_12ow_relevant_0.4)[ncol(data_first_treatment_12ow_relevant_0.4)]<-paste0("delta_",j)
@@ -1454,7 +1454,11 @@ for (j in 1:5) {
 
 
 # PRIM with delta coming from binary AB
-PRIM <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, day, delta))
+PRIM <- subset(data_first_treatment_12ow_relevant_0.4, 
+               select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,
+                          poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,
+                          hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB,
+                          day, delta))
 
 prim.table<-data.frame(matrix(ncol=(6)))
 colnames(prim.table)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
@@ -1472,12 +1476,12 @@ for (i in 1:10){
                                           optimal.box= "2se")
     rule_cov<-p.cov$covers[[1]]$superrule
     p.div <- prim.diversify(delta ~ .,
-                                      data = PRIM,
-                                      n = 4,
-                                      peeling.quantile = alpha,
-                                      min.support = beta,
-                                      plot = FALSE,
-                                      optimal.box = "2se")
+                            data = PRIM,
+                            n = 4,
+                            peeling.quantile = alpha,
+                            min.support = beta,
+                            plot = FALSE,
+                            optimal.box = "2se")
     rule_div<-p.div$attempts[[1]]$superrule
     
     prim.table[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
@@ -1486,7 +1490,10 @@ for (i in 1:10){
 }
 
 # PRIM with delta coming from binary AB without postalcode
-PRIM_np <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season, nr_contacts_infection, nr_prescriptions_AB, delta))
+PRIM_np <- subset(data_first_treatment_12ow_relevant_0.4,
+                  select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,
+                             poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,
+                             hartfalen_morb,flu_epi,season, nr_contacts_infection, nr_prescriptions_AB, day, delta))
 
 prim.table_np<-data.frame(matrix(ncol=(6)))
 colnames(prim.table_np)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
@@ -1504,12 +1511,12 @@ for (i in 1:10){
                                           optimal.box= "2se")
     rule_cov<-p.cov$covers[[1]]$superrule
     p.div <- prim.diversify(delta ~ .,
-                                      data = PRIM_np,
-                                      n = 4,
-                                      peeling.quantile = alpha,
-                                      min.support = beta,
-                                      plot = FALSE,
-                                      optimal.box = "2se")
+                            data = PRIM_np,
+                            n = 4,
+                            peeling.quantile = alpha,
+                            min.support = beta,
+                            plot = FALSE,
+                            optimal.box = "2se")
     rule_div<-p.div$attempts[[1]]$superrule
     
     prim.table_np[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
@@ -1518,7 +1525,10 @@ for (i in 1:10){
 }
 
 # PRIM with delta coming from binary AB without NA variables:  nr_contacts_resp,nr_contacts_infection, nr_prescriptions_AB
-PRIM_nm <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode,  delta))
+PRIM_nm <- subset(data_first_treatment_12ow_relevant_0.4, 
+                  select = c(age, sex, nr_medication,COPD_morb, migraine_morb, osteop_morb,
+                            poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,
+                            flu_epi,season,postalcode, day, delta))
 
 prim.table_nm<-data.frame(matrix(ncol=(6)))
 colnames(prim.table_nm)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
@@ -1536,12 +1546,12 @@ for (i in 1:10){
                                           optimal.box= "2se")
     rule_cov<-p.cov$covers[[1]]$superrule
     p.div <- prim.diversify(delta ~ .,
-                                      data = PRIM_nm,
-                                      n = 4,
-                                      peeling.quantile = alpha,
-                                      min.support = beta,
-                                      plot = FALSE,
-                                      optimal.box = "2se")
+                            data = PRIM_nm,
+                            n = 4,
+                            peeling.quantile = alpha,
+                            min.support = beta,
+                            plot = FALSE,
+                            optimal.box = "2se")
     rule_div<-p.div$attempts[[1]]$superrule
     
     prim.table_nm[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
@@ -1550,7 +1560,10 @@ for (i in 1:10){
 }
 
 # PRIM with delta coming from binary AB without postalcode & NA variables:  nr_contacts_resp,nr_contacts_infection, nr_prescriptions_AB,postalcode
-PRIM_npm <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season, delta))
+PRIM_npm <- subset(data_first_treatment_12ow_relevant_0.4, 
+                   select = c(age, sex, nr_medication,COPD_morb, migraine_morb, osteop_morb,
+                              poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,
+                              hartfalen_morb,flu_epi,season, day, delta))
 
 prim.table_npm<-data.frame(matrix(ncol=(6)))
 colnames(prim.table_npm)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
@@ -1568,12 +1581,12 @@ for (i in 1:10){
                                           optimal.box= "2se")
     rule_cov<-p.cov$covers[[1]]$superrule
     p.div <- prim.diversify(delta ~ .,
-                                      data = PRIM_nm,
-                                      n = 4,
-                                      peeling.quantile = alpha,
-                                      min.support = beta,
-                                      plot = FALSE,
-                                      optimal.box = "2se")
+                            data = PRIM_nm,
+                            n = 4,
+                            peeling.quantile = alpha,
+                            min.support = beta,
+                            plot = FALSE,
+                            optimal.box = "2se")
     rule_div<-p.div$attempts[[1]]$superrule
     
     prim.table_npm[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
@@ -1582,7 +1595,10 @@ for (i in 1:10){
 }
 
 # PRIM with delta coming from  AB TYPE 0 VS 1
-PRIM_1 <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, delta_1))
+PRIM_1 <- subset(data_first_treatment_12ow_relevant_0.4,
+                 select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,
+                            poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,
+                            hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, day, delta_1))
 
 prim.table_1<-data.frame(matrix(ncol=(6)))
 colnames(prim.table_1)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
@@ -1600,12 +1616,12 @@ for (i in 1:10){
                                           optimal.box= "2se")
     rule_cov<-p.cov$covers[[1]]$superrule
     p.div <- prim.diversify(delta_1 ~ .,
-                                      data = PRIM_1,
-                                      n = 4,
-                                      peeling.quantile = alpha,
-                                      min.support = beta,
-                                      plot = FALSE,
-                                      optimal.box = "2se")
+                            data = PRIM_1,
+                            n = 4,
+                            peeling.quantile = alpha,
+                            min.support = beta,
+                            plot = FALSE,
+                            optimal.box = "2se")
     rule_div<-p.div$attempts[[1]]$superrule
     
     prim.table_1[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
@@ -1614,7 +1630,10 @@ for (i in 1:10){
 }
 
 # PRIM with delta coming from  AB TYPE 0 VS 2
-PRIM_2 <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB,delta_2))
+PRIM_2 <- subset(data_first_treatment_12ow_relevant_0.4, 
+                 select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,
+                            poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,
+                            flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, day, delta_2))
 
 prim.table_2<-data.frame(matrix(ncol=(6)))
 colnames(prim.table_2)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
@@ -1632,12 +1651,12 @@ for (i in 1:10){
                                           optimal.box= "2se")
     rule_cov<-p.cov$covers[[1]]$superrule
     p.div <- prim.diversify(delta_2 ~ .,
-                                      data = PRIM_2,
-                                      n = 4,
-                                      peeling.quantile = alpha,
-                                      min.support = beta,
-                                      plot = FALSE,
-                                      optimal.box = "2se")
+                            data = PRIM_2,
+                            n = 4,
+                            peeling.quantile = alpha,
+                            min.support = beta,
+                            plot = FALSE,
+                            optimal.box = "2se")
     rule_div<-p.div$attempts[[1]]$superrule
     
     prim.table_2[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
@@ -1646,7 +1665,10 @@ for (i in 1:10){
 }
 
 # PRIM with delta coming from  AB TYPE 0 VS 3
-PRIM_3 <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB,delta_3))
+PRIM_3 <- subset(data_first_treatment_12ow_relevant_0.4, 
+                 select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,
+                            poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,
+                            flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, day, delta_3))
 
 prim.table_3<-data.frame(matrix(ncol=(6)))
 colnames(prim.table_3)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
@@ -1664,12 +1686,12 @@ for (i in 1:10){
                                           optimal.box= "2se")
     rule_cov<-p.cov$covers[[1]]$superrule
     p.div <- prim.diversify(delta_3 ~ .,
-                                      data = PRIM_3,
-                                      n = 4,
-                                      peeling.quantile = alpha,
-                                      min.support = beta,
-                                      plot = FALSE,
-                                      optimal.box = "2se")
+                            data = PRIM_3,
+                            n = 4,
+                            peeling.quantile = alpha,
+                            min.support = beta,
+                            plot = FALSE,
+                            optimal.box = "2se")
     rule_div<-p.div$attempts[[1]]$superrule
     
     prim.table_3[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))
@@ -1678,7 +1700,10 @@ for (i in 1:10){
 }
 
 # PRIM with delta coming from  AB TYPE 0 VS 4
-PRIM_4 <- subset(data_first_treatment_12ow_relevant_0.4, select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, delta_4))
+PRIM_4 <- subset(data_first_treatment_12ow_relevant_0.4,
+                 select = c(age, sex, nr_medication,COPD_morb, migraine_morb, nr_contacts_resp, osteop_morb,
+                            poor_immune_response, alcmisb_morb,practice_size, Depressie_morb,aangaf_morb,hartfalen_morb,
+                            flu_epi,season,postalcode, nr_contacts_infection, nr_prescriptions_AB, day, delta_4))
 
 prim.table_4<-data.frame(matrix(ncol=(6)))
 colnames(prim.table_4)<-c("alpha","beta","number_cov","rule_cov","number_div","rule_div")
@@ -1696,12 +1721,12 @@ for (i in 1:10){
                                           optimal.box= "2se")
     rule_cov<-p.cov$covers[[1]]$superrule
     p.div <- prim.diversify(delta_4 ~ .,
-                                      data = PRIM_4,
-                                      n = 4,
-                                      peeling.quantile = alpha,
-                                      min.support = beta,
-                                      plot = FALSE,
-                                      optimal.box = "2se")
+                            data = PRIM_4,
+                            n = 4,
+                            peeling.quantile = alpha,
+                            min.support = beta,
+                            plot = FALSE,
+                            optimal.box = "2se")
     rule_div<-p.div$attempts[[1]]$superrule
     
     prim.table_4[10*i+j-10,]<-c(alpha,beta,length(rule_cov),toString(rule_cov),length(rule_div),toString(rule_div))

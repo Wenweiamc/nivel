@@ -640,6 +640,15 @@ uni_type<-glm(outcome_4 ~ factor(type_AB_nose),weights = outcome_weight, data= d
 summary(uni_type)
 
 cbind( exp(coef(uni_type)), exp(summary(uni_type)$coefficients[,1] - 1.96*summary(uni_type)$coefficients[,2]), exp(summary(uni_type)$coefficients[,1] + 1.96*summary(uni_type)$coefficients[,2]) )
+## combine type 1&2
+uni_type_c<-glm(outcome_4 ~ factor(type),weights = outcome_weight, data= data_first_treatment_12ow_relevant_0.4, family = binomial)
+
+summary(uni_type_c)
+
+cbind( exp(coef(uni_type_c)), exp(summary(uni_type_c)$coefficients[,1] - 1.96*summary(uni_type_c)$coefficients[,2]), exp(summary(uni_type_c)$coefficients[,1] + 1.96*summary(uni_type_c)$coefficients[,2]) )
+
+
+
 ```
 
 

@@ -4,6 +4,7 @@
 ###########################
 # install.packages('glmnet')
 # install.packages('csvread')
+
 # install.packages('MASS')
 # install.packages('leaps')
 # install.packages('grid')
@@ -122,13 +123,18 @@ data_first_treatment_12ow <- mutate(data_first_treatment,
 outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
 
 data_first_treatment_12ow <- mutate(data_first_treatment, 
+outcome4_weighted=ifelse(is.na(outcome_4),outcome_weight, outcome_4))
+
+
+data_first_treatment_12ow <- mutate(data_first_treatment, 
 ID=seq.int(nrow(data_first_treatment_12ow)), 
 day=as.numeric(date - dmy(01012014)),
 month = month(date),
 flu_epi=ifelse(week(date) %in% c(5:8, 10,11,49:53),1,0),
 agecat1=cut(data_first_treatment$age, seq(0,80,10),labels=c(1:8)),
 agecat71018 = cut(data_first_treatment$age, c(0,7,10,18,81), right=FALSE),
-outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1))
+outcome_weight=ifelse(month(date)==12 & is.na(outcome_4),(31-day(data_first_treatment$date))/28, 1),
+outcome4_weighted=ifelse(is.na(outcome_4),outcome_weight, as.numeric(outcome_4)))
 
 ```{}
 
